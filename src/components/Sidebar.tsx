@@ -143,7 +143,7 @@ export function Sidebar() {
       )}
 
       {/* Avatar and Username */}
-      <div ref={userMenuRef} className={`p-4 border-t border-[#3E4451] ${isCollapsed ? "flex items-center justify-center" : ""} relative`}>
+      <div ref={userMenuRef} className={`p-4 ${isCollapsed ? "flex items-center justify-center" : ""} relative`}>
         {isCollapsed ? (
           <button
             onClick={handleUserClick}
