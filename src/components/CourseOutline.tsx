@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react"
-import { BookOpen, ChevronDown, ChevronLeft } from "lucide-react"
+import { BookOpen, ChevronDown, ChevronLeft, ChevronFirst, ChevronLast } from "lucide-react"
 import type { CourseData } from "@/types"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 
 interface CourseOutlineProps {
   courseData: CourseData
+  onToggleChat: () => void
+  isChatHidden: boolean
+  isSwapped?: boolean
 }
 
-export function CourseOutline({ courseData }: CourseOutlineProps) {
+export function CourseOutline({ courseData, onToggleChat, isChatHidden, isSwapped = false }: CourseOutlineProps) {
   const { title, outline } = courseData
   // Initialize with all modules expanded
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
@@ -36,9 +39,37 @@ export function CourseOutline({ courseData }: CourseOutlineProps) {
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 p-6 pb-0">
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-[#5B6B83] uppercase tracking-[0.4rem] mb-4">
-            Course Outline
-          </h2>
+          <div className={`flex items-center gap-2 mb-4 ${isSwapped ? "justify-between" : ""}`}>
+            {!isSwapped && (
+              <button
+                onClick={onToggleChat}
+                className="hover:bg-[#3E4451] rounded p-1 transition-colors"
+                aria-label="Toggle chat section"
+              >
+                {isChatHidden ? (
+                  <ChevronLast className="w-5 h-5 text-[#5B6B83] cursor-pointer" />
+                ) : (
+                  <ChevronFirst className="w-5 h-5 text-[#5B6B83] cursor-pointer" />
+                )}
+              </button>
+            )}
+            <h2 className="text-sm font-semibold text-[#5B6B83] uppercase tracking-[0.4rem]">
+              Course Outline
+            </h2>
+            {isSwapped && (
+              <button
+                onClick={onToggleChat}
+                className="hover:bg-[#3E4451] rounded p-1 transition-colors"
+                aria-label="Toggle chat section"
+              >
+                {isChatHidden ? (
+                  <ChevronFirst className="w-5 h-5 text-[#5B6B83] cursor-pointer" />
+                ) : (
+                  <ChevronLast className="w-5 h-5 text-[#5B6B83] cursor-pointer" />
+                )}
+              </button>
+            )}
+          </div>
           {title && (
             <h3 className="text-xl font-semibold text-[#E0E0E0] mb-6">
               {title}

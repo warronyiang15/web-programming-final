@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { ChatSection } from "@/components/ChatSection"
 import { CourseOutline } from "@/components/CourseOutline"
+import { Sidebar } from "@/components/Sidebar"
 import type { Message, CourseData } from "@/types"
 import "./App.css"
 
@@ -77,6 +78,13 @@ function App() {
   const [messages, setMessages] = useState<Message[]>(mockMessages)
   const [courseData, setCourseData] = useState<CourseData>(mockCourseData)
   const [isLoading, setIsLoading] = useState(false)
+  // Default 2:1 ratio (chat:outline) = 66.67% chat width
+  const [chatWidth, setChatWidth] = useState(66.67)
+  const [isResizing, setIsResizing] = useState(false)
+  const [isChatHidden, setIsChatHidden] = useState(false)
+  const [isSwapped, setIsSwapped] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const panelsRef = useRef<HTMLDivElement>(null)
 
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
@@ -137,21 +145,166 @@ function App() {
     }, 1000)
   }
 
-  return (
-    <div className="flex h-screen bg-[#21252B] overflow-hidden">
-      {/* Chat Section - Left Side */}
-      <div className="flex-1 flex flex-col border-r border-[#3E4451]">
-        <ChatSection
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          isLoading={isLoading}
-        />
-      </div>
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }
 
-      {/* Course Outline Section - Right Side */}
-      <div className="w-96 flex-shrink-0">
-        <CourseOutline courseData={courseData} />
-      </div>
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing || !panelsRef.current) return
+
+      // Calculate width relative to panels area (excluding sidebar)
+      const panelsRect = panelsRef.current.getBoundingClientRect()
+      const leftPanelWidth = ((e.clientX - panelsRect.left) / panelsRect.width) * 100
+
+      // When swapped, left panel is outline, so chatWidth = 100 - leftPanelWidth
+      // When not swapped, left panel is chat, so chatWidth = leftPanelWidth
+      const newChatWidth = isSwapped ? 100 - leftPanelWidth : leftPanelWidth
+
+      // Constrain between 33.33% (1:2 ratio) and 66.67% (2:1 ratio)
+      const constrainedWidth = Math.max(33.33, Math.min(66.67, newChatWidth))
+      setChatWidth(constrainedWidth)
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove)
+      document.addEventListener("mouseup", handleMouseUp)
+      document.body.style.cursor = "col-resize"
+      document.body.style.userSelect = "none"
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+    }
+  }, [isResizing, isSwapped])
+
+  const handleSwapPanels = () => {
+    setIsSwapped(!isSwapped)
+  }
+
+  return (
+    <div ref={containerRef} className="flex h-screen bg-[#21252B] overflow-hidden">
+      {/* Sidebar - Left */}
+      <Sidebar />
+
+      {/* Render panels based on swap state */}
+      {!isChatHidden && (
+        <div ref={panelsRef} className="flex flex-1">
+          {isSwapped ? (
+            <>
+              {/* Course Outline Section - Left */}
+              <div
+                className="flex flex-col border-r border-[#3E4451]"
+                style={{ width: `${100 - chatWidth}%` }}
+              >
+                <CourseOutline
+                  courseData={courseData}
+                  onToggleChat={() => setIsChatHidden(!isChatHidden)}
+                  isChatHidden={isChatHidden}
+                  isSwapped={isSwapped}
+                />
+              </div>
+
+              {/* Resizer */}
+              <div
+                className="relative group"
+                style={{ userSelect: "none" }}
+              >
+                {/* Visual resizer line */}
+                <div
+                  className={`w-1 bg-[#3E4451] hover:bg-[#61AFEF] transition-colors h-full ${isResizing ? "bg-[#61AFEF]" : ""
+                    }`}
+                />
+                {/* Wider invisible hit area for easier grabbing */}
+                <div
+                  onMouseDown={handleMouseDown}
+                  className="absolute inset-y-0 -left-2 -right-2 cursor-col-resize"
+                />
+              </div>
+
+              {/* Chat Section - Right */}
+              <div
+                className="flex flex-col flex-shrink-0"
+                style={{ width: `${chatWidth}%` }}
+              >
+                <ChatSection
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  isLoading={isLoading}
+                  onSwapPanels={handleSwapPanels}
+                  isSwapped={isSwapped}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Chat Section - Left */}
+              <div
+                className="flex flex-col border-r border-[#3E4451]"
+                style={{ width: `${chatWidth}%` }}
+              >
+                <ChatSection
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  isLoading={isLoading}
+                  onSwapPanels={handleSwapPanels}
+                  isSwapped={isSwapped}
+                />
+              </div>
+
+              {/* Resizer */}
+              <div
+                className="relative group"
+                style={{ userSelect: "none" }}
+              >
+                {/* Visual resizer line */}
+                <div
+                  className={`w-1 bg-[#3E4451] hover:bg-[#61AFEF] transition-colors h-full ${isResizing ? "bg-[#61AFEF]" : ""
+                    }`}
+                />
+                {/* Wider invisible hit area for easier grabbing */}
+                <div
+                  onMouseDown={handleMouseDown}
+                  className="absolute inset-y-0 -left-2 -right-2 cursor-col-resize"
+                />
+              </div>
+
+              {/* Course Outline Section - Right */}
+              <div
+                className="flex flex-col flex-shrink-0"
+                style={{ width: `${100 - chatWidth}%` }}
+              >
+                <CourseOutline
+                  courseData={courseData}
+                  onToggleChat={() => setIsChatHidden(!isChatHidden)}
+                  isChatHidden={isChatHidden}
+                  isSwapped={isSwapped}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Course Outline Section - When chat is hidden */}
+      {isChatHidden && (
+        <div className="flex flex-col flex-1">
+          <CourseOutline
+            courseData={courseData}
+            onToggleChat={() => setIsChatHidden(!isChatHidden)}
+            isChatHidden={isChatHidden}
+            isSwapped={isSwapped}
+          />
+        </div>
+      )}
     </div>
   )
 }
