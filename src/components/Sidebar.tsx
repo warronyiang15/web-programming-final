@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { useNavigate } from "react-router-dom"
 import { Menu, X, User, CheckCircle2, Circle, LogOut, LayoutDashboard } from "lucide-react"
 
 type SidebarProps = {
@@ -12,6 +13,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   const getStepState = (step: 1 | 2 | 3): StepState => {
     if (step < currentStep) return "completed"
@@ -81,9 +83,8 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
   }
 
   const handleDashboard = () => {
-    // Dummy dashboard function
-    console.log("Dashboard clicked")
     setShowUserMenu(false)
+    navigate("/dashboard")
   }
 
   const handleLogout = () => {
@@ -108,7 +109,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
         console.log("Modify course outline clicked")
         break
       case 3:
-        console.log("Modify website interface clicked")
+        console.log("Modify website layout clicked")
         break
       default:
         break
@@ -194,7 +195,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
             }`}
           >
             {getIcon(step3State)}
-            <span className={getStepTextClasses(step3State)}>Modify website interface</span>
+            <span className={getStepTextClasses(step3State)}>Modify website layout</span>
           </button>
         </div>
       )}
@@ -231,7 +232,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
                 ? "cursor-not-allowed opacity-50"
                 : "hover:bg-[#282C34] cursor-pointer"
             }`}
-            aria-label="Modify website interface"
+            aria-label="Modify website layout"
           >
             {getCollapsedIcon(step3State)}
           </button>

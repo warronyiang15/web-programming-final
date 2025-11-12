@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom"
 import type { MouseEvent as ReactMouseEvent } from "react"
 import "@/App.css"
 import { ChatSection } from "@/components/ChatSection"
-import { CourseOutline } from "@/components/CourseOutline"
+import { WebPreview } from "@/components/WebPreview"
 import { Sidebar } from "@/components/Sidebar"
 import { Modal } from "@/components/ui/modal"
-import type { CourseData, Message } from "@/types"
+import type { Message } from "@/types"
 
 const mockMessages: Message[] = [
   {
@@ -35,77 +35,53 @@ const mockMessages: Message[] = [
   },
 ]
 
-const mockCourseData: CourseData = {
-  title: "AI-Powered Course Design with React & Next.js",
-  outline: [
-    {
-      id: "1",
-      title: "Kickoff & Discovery",
-      description: "Set a clear product vision and gather course requirements.",
-      duration: "Week 1",
-      week: 1,
-      topics: [
-        "Define target learner persona",
-        "Capture scope with zod-powered schemas",
-        "Map conversational UX flows",
-      ],
-    },
-    {
-      id: "2",
-      title: "Interface Foundations",
-      description: "Craft responsive chat surfaces and outline panes.",
-      duration: "Week 2",
-      week: 2,
-      topics: [
-        "Design One Dark Pro inspired UI with Tailwind & shadcn primitives",
-        "Structure chat and outline panes in Next.js App Router",
-        "Instrument chat state management patterns",
-      ],
-    },
-    {
-      id: "3",
-      title: "AI Orchestration",
-      description: "Integrate AI services that transform chat into structured outlines.",
-      duration: "Week 3",
-      week: 3,
-      topics: [
-        "Design system prompts for multi-turn conversation",
-        "Stream outline updates with server actions",
-        "Build refinement loops with evaluation hooks",
-      ],
-    },
-  ],
-}
-
-export function OutlinePage() {
+export function WebDesignPage() {
   const [messages, setMessages] = useState<Message[]>(mockMessages)
-  const [courseData, setCourseData] = useState<CourseData>(mockCourseData)
   const [isLoading, setIsLoading] = useState(false)
   const [chatWidth, setChatWidth] = useState(66.67)
   const [isResizing, setIsResizing] = useState(false)
   const [isChatHidden, setIsChatHidden] = useState(false)
+  const [isPreviewHidden, setIsPreviewHidden] = useState(false)
   const [isSwapped, setIsSwapped] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [stepToNavigate, setStepToNavigate] = useState<1 | 2 | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const panelsRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
 
   const handleStepSelect = (step: 1 | 2 | 3) => {
     if (step === 1) {
+      setStepToNavigate(1)
       setShowConfirmModal(true)
     } else if (step === 2) {
-      navigate("/web-design")
+      setStepToNavigate(2)
+      setShowConfirmModal(true)
     }
-    // Step 2 is current, but clicking it navigates to web-design
+    // Step 3 is current, no action needed
   }
 
   const handleConfirm = () => {
     setShowConfirmModal(false)
-    navigate("/upload")
+    if (stepToNavigate === 1) {
+      navigate("/upload")
+    } else if (stepToNavigate === 2) {
+      navigate("/outline")
+    }
+    setStepToNavigate(null)
   }
 
   const handleCancel = () => {
     setShowConfirmModal(false)
+    setStepToNavigate(null)
+  }
+
+  const getModalMessage = () => {
+    if (stepToNavigate === 1) {
+      return "By doing so, you will have to re-design the course outline and web layout again."
+    } else if (stepToNavigate === 2) {
+      return "By doing so, you will have to re-design the web layout outline again."
+    }
+    return "By doing so, you will have to re-design the course outline again."
   }
 
   const handleSendMessage = async (content: string) => {
@@ -130,38 +106,6 @@ export function OutlinePage() {
 
       setMessages((prev) => [...prev, assistantMessage])
       setIsLoading(false)
-
-      if (content.toLowerCase().includes("course") || content.toLowerCase().includes("outline")) {
-        setCourseData({
-          title: "AI-Powered Course Design with React & Next.js",
-          outline: [
-            {
-              id: "1",
-              title: "Kickoff & Discovery",
-              description: "Overview of course planning fundamentals",
-              duration: "2 hours",
-              week: 1,
-              topics: [
-                "Define target learner persona",
-                "Capture scope with zod-powered schemas",
-                "Map conversational UX flows",
-              ],
-            },
-            {
-              id: "2",
-              title: "Interface Foundations",
-              description: "Deep dive into advanced concepts",
-              duration: "3 hours",
-              week: 2,
-              topics: [
-                "Design One Dark Pro inspired UI with Tailwind & shadcn primitives",
-                "Structure chat and outline panes in Next.js App Router",
-                "Instrument chat state management patterns",
-              ],
-            },
-          ],
-        })
-      }
     }, 1000)
   }
 
@@ -208,25 +152,26 @@ export function OutlinePage() {
 
   return (
     <div ref={containerRef} className="flex h-screen bg-[#21252B] overflow-hidden">
-      <Sidebar currentStep={2} onStepSelect={handleStepSelect} />
+      <Sidebar currentStep={3} onStepSelect={handleStepSelect} />
       
       <Modal
         isOpen={showConfirmModal}
         onClose={handleCancel}
         onConfirm={handleConfirm}
-        message="By doing so, you will have to re-design the course outline again."
+        message={getModalMessage()}
         confirmText="Continue"
         cancelText="Cancel"
       />
 
-      {!isChatHidden && (
+      {!isChatHidden && !isPreviewHidden && (
         <div ref={panelsRef} className="flex flex-1">
           {isSwapped ? (
             <>
               <div className="flex flex-col border-r border-[#3E4451]" style={{ width: `${100 - chatWidth}%` }}>
-                <CourseOutline
-                  courseData={courseData}
+                <WebPreview
                   onToggleChat={() => setIsChatHidden(!isChatHidden)}
+                  onHidePreview={() => setIsPreviewHidden(true)}
+                  onShowChat={() => setIsChatHidden(false)}
                   isChatHidden={isChatHidden}
                   isSwapped={isSwapped}
                 />
@@ -247,7 +192,9 @@ export function OutlinePage() {
                   onSendMessage={handleSendMessage}
                   isLoading={isLoading}
                   onSwapPanels={handleSwapPanels}
+                  onShowPreview={() => setIsPreviewHidden(false)}
                   isSwapped={isSwapped}
+                  isPreviewHidden={isPreviewHidden}
                 />
               </div>
             </>
@@ -259,7 +206,9 @@ export function OutlinePage() {
                   onSendMessage={handleSendMessage}
                   isLoading={isLoading}
                   onSwapPanels={handleSwapPanels}
+                  onShowPreview={() => setIsPreviewHidden(false)}
                   isSwapped={isSwapped}
+                  isPreviewHidden={isPreviewHidden}
                 />
               </div>
 
@@ -273,9 +222,10 @@ export function OutlinePage() {
               </div>
 
               <div className="flex flex-col flex-shrink-0" style={{ width: `${100 - chatWidth}%` }}>
-                <CourseOutline
-                  courseData={courseData}
+                <WebPreview
                   onToggleChat={() => setIsChatHidden(!isChatHidden)}
+                  onHidePreview={() => setIsPreviewHidden(true)}
+                  onShowChat={() => setIsChatHidden(false)}
                   isChatHidden={isChatHidden}
                   isSwapped={isSwapped}
                 />
@@ -285,13 +235,28 @@ export function OutlinePage() {
         </div>
       )}
 
-      {isChatHidden && (
+      {isChatHidden && !isPreviewHidden && (
         <div className="flex flex-col flex-1">
-          <CourseOutline
-            courseData={courseData}
+          <WebPreview
             onToggleChat={() => setIsChatHidden(!isChatHidden)}
+            onHidePreview={() => setIsPreviewHidden(true)}
+            onShowChat={() => setIsChatHidden(false)}
             isChatHidden={isChatHidden}
             isSwapped={isSwapped}
+          />
+        </div>
+      )}
+
+      {!isChatHidden && isPreviewHidden && (
+        <div className="flex flex-col flex-1">
+          <ChatSection
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            onSwapPanels={handleSwapPanels}
+            onShowPreview={() => setIsPreviewHidden(false)}
+            isSwapped={isSwapped}
+            isPreviewHidden={isPreviewHidden}
           />
         </div>
       )}

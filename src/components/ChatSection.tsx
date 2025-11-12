@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react"
-import { Send, Bot, ArrowLeftRight, Paperclip } from "lucide-react"
+import { Send, Bot, ArrowLeftRight, Paperclip, PanelRightOpen, PanelLeftOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Message } from "@/types"
 
@@ -8,10 +8,12 @@ interface ChatSectionProps {
   onSendMessage: (content: string) => void
   isLoading?: boolean
   onSwapPanels?: () => void
+  onShowPreview?: () => void
   isSwapped?: boolean
+  isPreviewHidden?: boolean
 }
 
-export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, isSwapped = false }: ChatSectionProps) {
+export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, onShowPreview, isSwapped = false, isPreviewHidden = false }: ChatSectionProps) {
   const [input, setInput] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -65,7 +67,7 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
     <div className="flex flex-col h-screen bg-[#282C34]">
       {/* Header */}
       <div className="border-b border-[#3E4451] px-6 py-5 flex items-center gap-3">
-        {isSwapped && onSwapPanels && (
+        {isSwapped && onSwapPanels && !isPreviewHidden && (
           <button
             onClick={onSwapPanels}
             className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
@@ -74,18 +76,40 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
             <ArrowLeftRight className="w-5 h-5 text-[#5B6B83]" />
           </button>
         )}
+        {isSwapped && isPreviewHidden && onShowPreview && (
+          <button
+            onClick={onShowPreview}
+            className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
+            aria-label="Show preview"
+            title="Show preview"
+          >
+            <PanelLeftOpen className="w-5 h-5 text-[#5B6B83]" />
+          </button>
+        )}
         <h1 className="text-2xl font-semibold text-[#E0E0E0]">
           Chat your way to a course outline
         </h1>
-        {!isSwapped && onSwapPanels && (
-          <button
-            onClick={onSwapPanels}
-            className="p-2 hover:bg-[#3E4451] rounded-md transition-colors ml-auto cursor-pointer"
-            aria-label="Swap panels"
-          >
-            <ArrowLeftRight className="w-5 h-5 text-[#5B6B83]" />
-          </button>
-        )}
+        <div className="flex items-center gap-2 ml-auto">
+          {!isSwapped && isPreviewHidden && onShowPreview && (
+            <button
+              onClick={onShowPreview}
+              className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
+              aria-label="Show preview"
+              title="Show preview"
+            >
+              <PanelRightOpen className="w-5 h-5 text-[#5B6B83]" />
+            </button>
+          )}
+          {!isSwapped && onSwapPanels && !isPreviewHidden && (
+            <button
+              onClick={onSwapPanels}
+              className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
+              aria-label="Swap panels"
+            >
+              <ArrowLeftRight className="w-5 h-5 text-[#5B6B83]" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Chat History */}
@@ -167,12 +191,12 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
             id="pdf-upload"
           />
           <div className="relative w-[80%] flex items-center">
-          <button
-            type="button"
-            onClick={handlePaperclipClick}
-            className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-2 hover:bg-[#3E4451]/50 rounded-md transition-colors z-10 cursor-pointer"
-            aria-label="Upload PDF file"
-          >
+            <button
+              type="button"
+              onClick={handlePaperclipClick}
+              className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-2 hover:bg-[#3E4451]/50 rounded-md transition-colors z-10 cursor-pointer"
+              aria-label="Upload PDF file"
+            >
               <Paperclip className="w-5 h-5 text-[#ABB2BF]" />
             </button>
             <textarea

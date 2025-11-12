@@ -123,7 +123,7 @@ export function HomePage() {
               </button>
               <button
                 onClick={handleGetStartedClick}
-                className="group relative flex items-center justify-center overflow-hidden rounded-full bg-emerald-500 px-8 py-3 text-sm font-semibold text-black transition hover:bg-emerald-400"
+                className="group relative flex items-center justify-center overflow-hidden rounded-full bg-blue-600 px-8 py-3 text-sm font-semibold text-white transition hover:bg-blue-500"
               >
                 <span className="relative flex items-center gap-2 transition-transform duration-200 group-hover:-translate-x-2">
                   Get Started
@@ -195,7 +195,7 @@ export function HomePage() {
                 className={`space-y-4 text-white/80 ${index % 2 === 1 ? "md:order-2 md:text-right md:[&>p]:mx-0" : ""
                   }`}
               >
-                <span className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">
+                <span className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-400">
                   {step.title}
                 </span>
                 <h3 className="text-3xl font-semibold text-white">{step.heading}</h3>
