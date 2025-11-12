@@ -55,6 +55,20 @@ export function DashboardPage() {
     return "dashboard"
   }
   const activeTab = getActiveTab()
+
+  // Get header title based on active tab
+  const getHeaderTitle = () => {
+    switch (activeTab) {
+      case "preferences":
+        return "Preferences"
+      case "help-center":
+        return "Help Center"
+      case "dashboard":
+      default:
+        return "Dashboard"
+    }
+  }
+
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [isEditingUsername, setIsEditingUsername] = useState(false)
@@ -189,23 +203,26 @@ export function DashboardPage() {
 
   // Apply theme on mount and when theme changes
   useEffect(() => {
+    // Remove all theme classes first
+    document.documentElement.classList.remove("dark", "theme-light")
+
     if (theme === "system") {
       const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
       document.documentElement.classList.toggle("dark", systemPrefersDark)
 
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
       const handleChange = (e: MediaQueryListEvent) => {
+        // Remove other theme classes when system preference changes
+        document.documentElement.classList.remove("theme-light")
         document.documentElement.classList.toggle("dark", e.matches)
       }
       mediaQuery.addEventListener("change", handleChange)
       return () => mediaQuery.removeEventListener("change", handleChange)
+    } else if (theme === "light") {
+      document.documentElement.classList.add("theme-light")
     } else {
-      // Remove dark class for light theme, add for dark theme
-      if (theme === "light") {
-        document.documentElement.classList.remove("dark")
-      } else {
-        document.documentElement.classList.add("dark")
-      }
+      // dark theme
+      document.documentElement.classList.add("dark")
     }
   }, [theme])
 
@@ -338,6 +355,42 @@ export function DashboardPage() {
     }
   }, [])
 
+  // Theme-aware color helpers
+  const getBgColor = () => {
+    if (theme === "light") return "bg-white"
+    return "bg-[#21252B]"
+  }
+
+  const getTextColor = () => {
+    if (theme === "light") return "text-gray-800"
+    return "text-[#E0E0E0]"
+  }
+
+  const getBorderColor = () => {
+    if (theme === "light") return "border-gray-200"
+    return "border-[#3E4451]"
+  }
+
+  const getCardBg = () => {
+    if (theme === "light") return "bg-gray-50"
+    return "bg-[#1E2025]"
+  }
+
+  const getCardSurface = () => {
+    if (theme === "light") return "bg-gray-100"
+    return "bg-[#282C34]"
+  }
+
+  const getMutedText = () => {
+    if (theme === "light") return "text-gray-600"
+    return "text-[#9DA5B4]"
+  }
+
+  const getHoverBg = () => {
+    if (theme === "light") return "hover:bg-gray-100"
+    return "hover:bg-[#282C34]"
+  }
+
   const getStepColor = (step: string) => {
     switch (step) {
       case "Step 1: Upload":
@@ -361,7 +414,7 @@ export function DashboardPage() {
 
     return (
       <div>
-        <h3 className="text-sm font-semibold text-[#E0E0E0] mb-3 flex items-center gap-2 whitespace-nowrap">
+        <h3 className={`text-sm font-semibold ${getTextColor()} mb-3 flex items-center gap-2 whitespace-nowrap`}>
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: stepColor }} />
           {title}
         </h3>
@@ -370,18 +423,18 @@ export function DashboardPage() {
             <div
               key={project.id}
               onClick={() => !isDeployed && handleProjectClick(project)}
-              className={`flex items-center justify-between rounded-xl border border-[#3E4451] bg-[#282C34] px-4 py-3 transition-colors ${isDeployed
-                ? ""
-                : "hover:bg-[#2C313C] cursor-pointer"
+              className={`flex items-center justify-between rounded-xl border px-4 py-3 transition-all duration-200 ${isDeployed
+                ? `${getBorderColor()} ${getCardSurface()}`
+                : `${getBorderColor()} ${getCardSurface()} cursor-pointer ${theme === "light" ? "hover:border-blue-400 hover:bg-blue-50" : "hover:border-[#61AFEF] hover:bg-[#2C313C]"}`
                 }`}
             >
               <span
-                className="text-sm font-medium text-[#E0E0E0] truncate min-w-0 flex-1"
+                className={`text-sm font-medium ${getTextColor()} truncate min-w-0 flex-1`}
                 onMouseEnter={(e) => handleMouseEnter(e, project.name)}
                 onMouseMove={(e) => handleMouseMove(e, project.name)}
                 onMouseLeave={handleMouseLeave}
               >{project.name}</span>
-              <span className="text-xs text-[#9DA5B4] whitespace-nowrap ml-2 flex-shrink-0">{formatDate(project.updatedAt)}</span>
+              <span className={`text-xs ${getMutedText()} whitespace-nowrap ml-2 flex-shrink-0`}>{formatDate(project.updatedAt)}</span>
             </div>
           ))}
         </div>
@@ -390,33 +443,33 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#21252B] text-[#E0E0E0] overflow-hidden">
+    <div className={`flex flex-col h-screen ${getBgColor()} ${getTextColor()} overflow-hidden`}>
       {/* Header */}
-      <header className="border-b border-[#3E4451] px-8 py-6 flex-shrink-0">
+      <header className={`border-b ${getBorderColor()} px-8 py-6 flex-shrink-0`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-[#E0E0E0]">User profile</h1>
+            <h1 className={`text-3xl font-semibold ${getTextColor()}`}>{getHeaderTitle()}</h1>
           </div>
           <div ref={userMenuRef} className="relative">
             <button
               onClick={handleUserClick}
-              className="flex items-center gap-3 hover:bg-[#282C34] rounded-lg px-4 py-3 transition-colors cursor-pointer"
+              className={`flex items-center gap-3 ${getHoverBg()} rounded-lg px-4 py-3 transition-colors cursor-pointer`}
               aria-label="User menu"
             >
-              <div className="w-8 h-8 rounded-full bg-[#282C34] flex items-center justify-center border border-[#3E4451] flex-shrink-0">
-                <User className="w-5 h-5 text-[#E0E0E0]" />
+              <div className={`w-8 h-8 rounded-full ${getCardSurface()} flex items-center justify-center border ${getBorderColor()} flex-shrink-0`}>
+                <User className={`w-5 h-5 ${getTextColor()}`} />
               </div>
-              <span className="text-sm text-[#E0E0E0] font-medium">{username}</span>
+              <span className={`text-sm ${getTextColor()} font-medium`}>{username}</span>
             </button>
 
             {/* User Menu */}
             {showUserMenu && (
               <div className="absolute right-0 top-full mt-2">
-                <div className="bg-[#282C34] border border-[#3E4451] rounded-md shadow-lg overflow-hidden flex flex-col gap-0 min-w-[160px]">
+                <div className={`${getCardSurface()} border ${getBorderColor()} rounded-md shadow-lg overflow-hidden flex flex-col gap-0 min-w-[160px]`}>
                   {/* Logout Button */}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#3E4451] transition-colors text-sm text-red-400 cursor-pointer"
+                    className={`w-full flex items-center gap-3 px-4 py-2 ${getHoverBg()} transition-colors text-sm text-red-400 cursor-pointer`}
                   >
                     <LogOut className="w-4 h-4 text-red-400" />
                     <span>Logout</span>
@@ -437,8 +490,8 @@ export function DashboardPage() {
               <button
                 onClick={() => navigate("/user/dashboard")}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${activeTab === "dashboard"
-                  ? "bg-[#282C34] text-[#E0E0E0]"
-                  : "text-[#9DA5B4] hover:bg-[#282C34] hover:text-[#E0E0E0]"
+                  ? `${getCardSurface()} ${getTextColor()}`
+                  : `${getMutedText()} ${getHoverBg()}`
                   }`}
               >
                 <LayoutDashboard className="w-5 h-5" />
@@ -447,8 +500,8 @@ export function DashboardPage() {
               <button
                 onClick={() => navigate("/user/preferences")}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${activeTab === "preferences"
-                  ? "bg-[#282C34] text-[#E0E0E0]"
-                  : "text-[#9DA5B4] hover:bg-[#282C34] hover:text-[#E0E0E0]"
+                  ? `${getCardSurface()} ${getTextColor()}`
+                  : `${getMutedText()} ${getHoverBg()}`
                   }`}
               >
                 <Settings className="w-5 h-5" />
@@ -457,8 +510,8 @@ export function DashboardPage() {
               <button
                 onClick={() => navigate("/user/help-center")}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors ${activeTab === "help-center"
-                  ? "bg-[#282C34] text-[#E0E0E0]"
-                  : "text-[#9DA5B4] hover:bg-[#282C34] hover:text-[#E0E0E0]"
+                  ? `${getCardSurface()} ${getTextColor()}`
+                  : `${getMutedText()} ${getHoverBg()}`
                   }`}
               >
                 <HelpCircle className="w-5 h-5" />
@@ -472,11 +525,11 @@ export function DashboardPage() {
                 {activeTab === "dashboard" && (
                   <>
                     {/* User Card */}
-                    <section className="rounded-2xl border border-[#3E4451] bg-[#1E2025] p-6">
+                    <section className={`rounded-2xl border ${getBorderColor()} ${getCardBg()} p-6`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
-                          <div className="w-16 h-16 rounded-full bg-[#282C34] flex items-center justify-center border border-[#3E4451] flex-shrink-0">
-                            <User className="w-8 h-8 text-[#E0E0E0]" />
+                          <div className={`w-16 h-16 rounded-full ${getCardSurface()} flex items-center justify-center border ${getBorderColor()} flex-shrink-0`}>
+                            <User className={`w-8 h-8 ${getTextColor()}`} />
                           </div>
                           <div className="flex-1">
                             {isEditingUsername ? (
@@ -485,7 +538,7 @@ export function DashboardPage() {
                                   type="text"
                                   value={editedUsername}
                                   onChange={(e) => setEditedUsername(e.target.value)}
-                                  className="flex-1 px-3 py-1 rounded-md bg-[#282C34] border border-[#3E4451] text-[#E0E0E0] text-xl font-semibold focus:outline-none focus:border-[#61AFEF]"
+                                  className={`flex-1 px-3 py-1 rounded-md ${getCardSurface()} border ${getBorderColor()} ${getTextColor()} text-xl font-semibold focus:outline-none focus:border-[#61AFEF]`}
                                   autoFocus
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
@@ -497,37 +550,40 @@ export function DashboardPage() {
                                 />
                                 <button
                                   onClick={handleSaveUsername}
-                                  className="p-1 rounded hover:bg-[#282C34] transition-colors cursor-pointer"
+                                  className={`p-1 rounded ${getHoverBg()} transition-colors cursor-pointer`}
                                   aria-label="Save username"
                                 >
                                   <Check className="w-5 h-5 text-[#8DB472]" />
                                 </button>
                                 <button
                                   onClick={handleCancelEditUsername}
-                                  className="p-1 rounded hover:bg-[#282C34] transition-colors cursor-pointer"
+                                  className={`p-1 rounded ${getHoverBg()} transition-colors cursor-pointer`}
                                   aria-label="Cancel edit"
                                 >
-                                  <X className="w-5 h-5 text-[#9DA5B4]" />
+                                  <X className={`w-5 h-5 ${getMutedText()}`} />
                                 </button>
                               </div>
                             ) : (
                               <div className="flex items-center gap-2">
-                                <h2 className="text-xl font-semibold text-[#E0E0E0] whitespace-nowrap">{username}</h2>
+                                <h2 className={`text-xl font-semibold ${getTextColor()} whitespace-nowrap`}>{username}</h2>
                                 <button
                                   onClick={handleEditUsername}
-                                  className="p-1 rounded hover:bg-[#282C34] transition-colors cursor-pointer"
+                                  className={`p-1 rounded ${getHoverBg()} transition-colors cursor-pointer`}
                                   aria-label="Edit username"
                                 >
-                                  <Pencil className="w-4 h-4 text-[#9DA5B4]" />
+                                  <Pencil className={`w-4 h-4 ${getMutedText()}`} />
                                 </button>
                               </div>
                             )}
-                            <p className="text-sm text-[#9DA5B4] whitespace-nowrap">User Account</p>
+                            <p className={`text-sm ${getMutedText()} whitespace-nowrap`}>User Account</p>
                           </div>
                         </div>
                         <button
                           onClick={handleDeleteAccount}
-                          className="flex items-center gap-2 px-4 py-2 rounded-md bg-red-900/50 text-red-400 text-sm font-medium transition hover:bg-red-900/70 border border-red-800/50 cursor-pointer whitespace-nowrap"
+                          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition border cursor-pointer whitespace-nowrap ${theme === "light"
+                            ? "bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                            : "bg-red-900/50 text-red-400 hover:bg-red-900/70 border-red-800/50"
+                            }`}
                         >
                           <Trash2 className="w-4 h-4" />
                           <span>Delete Account</span>
@@ -537,9 +593,9 @@ export function DashboardPage() {
 
                     {/* Statistics Section */}
                     <section className="flex flex-wrap gap-6">
-                      <div className="rounded-2xl border-2 border-[#C678DD] bg-[#1E2025] p-6 w-full md:w-full xl:w-auto xl:flex-1 xl:min-w-0 overflow-hidden">
+                      <div className={`rounded-2xl border-2 border-[#C678DD] ${getCardBg()} p-6 w-full md:w-full xl:w-auto xl:flex-1 xl:min-w-0 overflow-hidden`}>
                         <p
-                          className="text-sm text-[#9DA5B4] whitespace-nowrap truncate"
+                          className={`text-sm ${getMutedText()} whitespace-nowrap truncate`}
                           onMouseEnter={(e) => handleMouseEnter(e, "Total Projects")}
                           onMouseMove={(e) => handleMouseMove(e, "Total Projects")}
                           onMouseLeave={handleMouseLeave}
@@ -551,10 +607,10 @@ export function DashboardPage() {
                           onMouseLeave={handleMouseLeave}
                         >{totalProjects}</p>
                       </div>
-                      <div className="w-px bg-[#3E4451] self-stretch hidden xl:block" />
-                      <div className="rounded-2xl border-2 border-[#61AFEF] bg-[#1E2025] p-6 flex-1 min-w-[calc(50%-12px)] md:flex-1 md:min-w-0 xl:flex-1 xl:min-w-0 overflow-hidden">
+                      <div className={`w-px ${theme === "light" ? "bg-gray-200" : "bg-[#3E4451]"} self-stretch hidden xl:block`} />
+                      <div className={`rounded-2xl border-2 border-[#61AFEF] ${getCardBg()} p-6 flex-1 min-w-[calc(50%-12px)] md:flex-1 md:min-w-0 xl:flex-1 xl:min-w-0 overflow-hidden`}>
                         <p
-                          className="text-sm text-[#9DA5B4] whitespace-nowrap truncate"
+                          className={`text-sm ${getMutedText()} whitespace-nowrap truncate`}
                           onMouseEnter={(e) => handleMouseEnter(e, "Step 1: Upload")}
                           onMouseMove={(e) => handleMouseMove(e, "Step 1: Upload")}
                           onMouseLeave={handleMouseLeave}
@@ -566,9 +622,9 @@ export function DashboardPage() {
                           onMouseLeave={handleMouseLeave}
                         >{step1Count}</p>
                       </div>
-                      <div className="rounded-2xl border-2 border-[#E5C07B] bg-[#1E2025] p-6 flex-1 min-w-[calc(50%-12px)] md:flex-1 md:min-w-0 xl:flex-1 xl:min-w-0 overflow-hidden">
+                      <div className={`rounded-2xl border-2 border-[#E5C07B] ${getCardBg()} p-6 flex-1 min-w-[calc(50%-12px)] md:flex-1 md:min-w-0 xl:flex-1 xl:min-w-0 overflow-hidden`}>
                         <p
-                          className="text-sm text-[#9DA5B4] whitespace-nowrap truncate"
+                          className={`text-sm ${getMutedText()} whitespace-nowrap truncate`}
                           onMouseEnter={(e) => handleMouseEnter(e, "Step 2: Outline")}
                           onMouseMove={(e) => handleMouseMove(e, "Step 2: Outline")}
                           onMouseLeave={handleMouseLeave}
@@ -580,9 +636,9 @@ export function DashboardPage() {
                           onMouseLeave={handleMouseLeave}
                         >{step2Count}</p>
                       </div>
-                      <div className="rounded-2xl border-2 border-[#56B6C2] bg-[#1E2025] p-6 flex-1 min-w-[calc(50%-12px)] md:flex-1 md:min-w-0 xl:flex-1 xl:min-w-0 overflow-hidden">
+                      <div className={`rounded-2xl border-2 border-[#56B6C2] ${getCardBg()} p-6 flex-1 min-w-[calc(50%-12px)] md:flex-1 md:min-w-0 xl:flex-1 xl:min-w-0 overflow-hidden`}>
                         <p
-                          className="text-sm text-[#9DA5B4] whitespace-nowrap truncate"
+                          className={`text-sm ${getMutedText()} whitespace-nowrap truncate`}
                           onMouseEnter={(e) => handleMouseEnter(e, "Step 3: Design")}
                           onMouseMove={(e) => handleMouseMove(e, "Step 3: Design")}
                           onMouseLeave={handleMouseLeave}
@@ -594,9 +650,9 @@ export function DashboardPage() {
                           onMouseLeave={handleMouseLeave}
                         >{step3Count}</p>
                       </div>
-                      <div className="rounded-2xl border-2 border-[#8DB472] bg-[#1E2025] p-6 flex-1 min-w-[calc(50%-12px)] md:flex-1 md:min-w-0 xl:flex-1 xl:min-w-0 overflow-hidden">
+                      <div className={`rounded-2xl border-2 border-[#8DB472] ${getCardBg()} p-6 flex-1 min-w-[calc(50%-12px)] md:flex-1 md:min-w-0 xl:flex-1 xl:min-w-0 overflow-hidden`}>
                         <p
-                          className="text-sm text-[#9DA5B4] whitespace-nowrap truncate"
+                          className={`text-sm ${getMutedText()} whitespace-nowrap truncate`}
                           onMouseEnter={(e) => handleMouseEnter(e, "Step 4: Deployed")}
                           onMouseMove={(e) => handleMouseMove(e, "Step 4: Deployed")}
                           onMouseLeave={handleMouseLeave}
@@ -611,12 +667,13 @@ export function DashboardPage() {
                     </section>
 
                     {/* Projects List Section */}
-                    <section className="rounded-2xl border border-[#3E4451] bg-[#1E2025] p-6">
+                    <section className={`rounded-2xl border ${getBorderColor()} ${getCardBg()} p-6`}>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-medium text-[#E0E0E0] whitespace-nowrap">Current Projects</h2>
+                        <h2 className={`text-lg font-medium ${getTextColor()} whitespace-nowrap`}>Current Projects</h2>
                         <button
                           onClick={handleCreateNewCourse}
-                          className="rounded-md bg-[#61AFEF] px-4 py-2 text-sm font-medium text-[#1E2025] transition hover:bg-[#82C6FF] whitespace-nowrap"
+                          className={`rounded-md bg-[#61AFEF] px-4 py-2 text-sm font-medium transition hover:bg-[#82C6FF] whitespace-nowrap ${theme === "light" ? "text-white" : "text-[#1E2025]"
+                            }`}
                         >
                           Create New Course
                         </button>
@@ -624,15 +681,15 @@ export function DashboardPage() {
                       <div className="space-y-6">
                         {renderProjectSection("Step 1: Upload", step1Projects)}
                         {step1Projects.length > 0 && (step2Projects.length > 0 || step3Projects.length > 0 || step4Projects.length > 0) && (
-                          <div className="border-t border-[#3E4451]" />
+                          <div className={`border-t ${getBorderColor()}`} />
                         )}
                         {renderProjectSection("Step 2: Outline", step2Projects)}
                         {step2Projects.length > 0 && (step3Projects.length > 0 || step4Projects.length > 0) && (
-                          <div className="border-t border-[#3E4451]" />
+                          <div className={`border-t ${getBorderColor()}`} />
                         )}
                         {renderProjectSection("Step 3: Design", step3Projects)}
                         {step3Projects.length > 0 && step4Projects.length > 0 && (
-                          <div className="border-t border-[#3E4451]" />
+                          <div className={`border-t ${getBorderColor()}`} />
                         )}
                         {renderProjectSection("Step 4: Deployed", step4Projects)}
                       </div>
@@ -642,17 +699,17 @@ export function DashboardPage() {
 
                 {activeTab === "preferences" && (
                   <div>
-                    <h2 className="text-lg font-semibold text-[#E0E0E0] mb-6">Preferences</h2>
-                    <section className="rounded-2xl border border-[#3E4451] bg-[#1E2025] p-6 w-full">
+                    <h2 className={`text-lg font-semibold ${getTextColor()} mb-6`}>Preferences</h2>
+                    <section className={`rounded-2xl border ${getBorderColor()} ${getCardBg()} p-6 w-full`}>
                       <div className="flex items-center gap-2 mb-2">
-                        <Sun className="w-5 h-5 text-[#E0E0E0]" />
-                        <h3 className="text-base font-semibold text-[#E0E0E0]">Theme</h3>
+                        <Sun className={`w-5 h-5 ${getTextColor()}`} />
+                        <h3 className={`text-base font-semibold ${getTextColor()}`}>Theme</h3>
                       </div>
-                      <p className="text-sm text-[#9DA5B4] mb-4">Choose your preferred color scheme</p>
-                      <div className="relative flex p-1 rounded-lg bg-[#282C34] border border-[#3E4451]">
+                      <p className={`text-sm ${getMutedText()} mb-4`}>Choose your preferred color scheme</p>
+                      <div className={`relative flex p-1 rounded-lg ${getCardSurface()} border ${getBorderColor()}`}>
                         {/* Sliding indicator */}
                         <div
-                          className={`absolute top-1 bottom-1 rounded-md bg-[#1E2025] border border-[#5C6370] transition-all duration-300 ease-in-out ${theme === "light"
+                          className={`absolute top-1 bottom-1 rounded-md ${getCardBg()} border ${getBorderColor()} transition-all duration-300 ease-in-out ${theme === "light"
                             ? "left-1 w-[calc(33.333%-0.333rem)]"
                             : theme === "dark"
                               ? "left-[calc(33.333%+0.167rem)] w-[calc(33.333%-0.333rem)]"
@@ -662,8 +719,8 @@ export function DashboardPage() {
                         <button
                           onClick={() => handleThemeChange("light")}
                           className={`relative flex items-center justify-center gap-2 px-4 py-3 rounded-md transition-colors cursor-pointer flex-1 z-10 ${theme === "light"
-                            ? "text-[#E0E0E0]"
-                            : "text-[#9DA5B4] hover:text-[#E0E0E0]"
+                            ? getTextColor()
+                            : getMutedText()
                             }`}
                         >
                           <Sun className="w-4 h-4" />
@@ -672,8 +729,8 @@ export function DashboardPage() {
                         <button
                           onClick={() => handleThemeChange("dark")}
                           className={`relative flex items-center justify-center gap-2 px-4 py-3 rounded-md transition-colors cursor-pointer flex-1 z-10 ${theme === "dark"
-                            ? "text-[#E0E0E0]"
-                            : "text-[#9DA5B4] hover:text-[#E0E0E0]"
+                            ? getTextColor()
+                            : getMutedText()
                             }`}
                         >
                           <Moon className="w-4 h-4" />
@@ -682,8 +739,8 @@ export function DashboardPage() {
                         <button
                           onClick={() => handleThemeChange("system")}
                           className={`relative flex items-center justify-center gap-2 px-4 py-3 rounded-md transition-colors cursor-pointer flex-1 z-10 ${theme === "system"
-                            ? "text-[#E0E0E0]"
-                            : "text-[#9DA5B4] hover:text-[#E0E0E0]"
+                            ? getTextColor()
+                            : getMutedText()
                             }`}
                         >
                           <Monitor className="w-4 h-4" />
@@ -696,9 +753,9 @@ export function DashboardPage() {
 
                 {activeTab === "help-center" && (
                   <div>
-                    <h2 className="text-lg font-semibold text-[#E0E0E0] mb-6">Help Center</h2>
-                    <section className="rounded-2xl border border-[#3E4451] bg-[#1E2025] p-6 w-full">
-                      <p className="text-sm text-[#9DA5B4]">Help content will be displayed here.</p>
+                    <h2 className={`text-lg font-semibold ${getTextColor()} mb-6`}>Help Center</h2>
+                    <section className={`rounded-2xl border ${getBorderColor()} ${getCardBg()} p-6 w-full`}>
+                      <p className={`text-sm ${getMutedText()}`}>Help content will be displayed here.</p>
                     </section>
                   </div>
                 )}
@@ -711,7 +768,7 @@ export function DashboardPage() {
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 px-3 py-2 rounded-md bg-[#282C34] border border-[#3E4451] text-sm text-[#E0E0E0] shadow-lg pointer-events-none"
+          className={`fixed z-50 px-3 py-2 rounded-md ${getCardSurface()} border ${getBorderColor()} text-sm ${getTextColor()} shadow-lg pointer-events-none`}
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,
@@ -730,14 +787,14 @@ export function DashboardPage() {
           onClick={handleDeleteCancel}
         >
           <div
-            className="bg-[#282C34] border border-[#3E4451] rounded-lg shadow-lg p-6 max-w-md w-full mx-4"
+            className={`${getCardSurface()} border ${getBorderColor()} rounded-lg shadow-lg p-6 max-w-md w-full mx-4`}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-semibold text-[#E0E0E0] mb-4">Delete Account</h2>
-            <div className="text-sm text-[#ABB2BF] mb-6 space-y-2">
+            <h2 className={`text-xl font-semibold ${getTextColor()} mb-4`}>Delete Account</h2>
+            <div className={`text-sm ${getMutedText()} mb-6 space-y-2`}>
               <p>Are you sure you want to permanently delete your account?</p>
               <p>
-                This action <span className="font-bold text-[#E0E0E0]">CANNOT be undone</span> and all your data will be permanently deleted.
+                This action <span className={`font-bold ${getTextColor()}`}>CANNOT be undone</span> and all your data will be permanently deleted.
               </p>
               <p className="mt-4">Type DELETE to confirm.</p>
             </div>
@@ -746,12 +803,12 @@ export function DashboardPage() {
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="Type DELETE"
-              className="w-full px-4 py-2 rounded-md bg-[#1E2025] border border-[#3E4451] text-[#E0E0E0] mb-6 focus:outline-none focus:border-[#61AFEF]"
+              className={`w-full px-4 py-2 rounded-md ${getCardBg()} border ${getBorderColor()} ${getTextColor()} mb-6 focus:outline-none focus:border-[#61AFEF]`}
             />
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleDeleteCancel}
-                className="px-4 py-2 rounded-md border border-[#3E4451] bg-[#1E2025] text-[#E0E0E0] text-sm font-medium transition hover:bg-[#282C34] cursor-pointer"
+                className={`px-4 py-2 rounded-md border ${getBorderColor()} ${getCardBg()} ${getTextColor()} text-sm font-medium transition ${getHoverBg()} cursor-pointer`}
               >
                 Cancel
               </button>

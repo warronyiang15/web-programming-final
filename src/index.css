@@ -18,10 +18,31 @@
     --accent-foreground: #ABB2BF;
   }
 
+  .theme-light {
+    --background: #FFFFFF;
+    --foreground: #1F2937;
+    --card: #F9FAFB;
+    --card-foreground: #1F2937;
+    --border: #E5E7EB;
+    --input: #E5E7EB;
+    --primary: #3B82F6;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F3F4F6;
+    --secondary-foreground: #1F2937;
+    --muted: #E5E7EB;
+    --muted-foreground: #6B7280;
+    --accent: #8B5CF6;
+    --accent-foreground: #FFFFFF;
+  }
+
   body {
     @apply bg-[#21252B] text-[#ABB2BF] font-sans antialiased;
     margin: 0;
     min-height: 100vh;
+  }
+
+  .theme-light body {
+    @apply bg-white text-gray-800;
   }
 }
 
