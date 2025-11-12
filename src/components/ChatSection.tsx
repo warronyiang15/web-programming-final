@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react"
-import { Send, Bot, ArrowLeftRight, Paperclip, PanelRightOpen, PanelLeftOpen } from "lucide-react"
+import { Send, Bot, ArrowLeftRight, Paperclip, PanelRightOpen, PanelLeftOpen, Pencil, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Message } from "@/types"
 
@@ -11,12 +11,22 @@ interface ChatSectionProps {
   onShowPreview?: () => void
   isSwapped?: boolean
   isPreviewHidden?: boolean
+  courseTitle?: string
+  onCourseTitleChange?: (title: string) => void
+  isEditable?: boolean
 }
 
-export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, onShowPreview, isSwapped = false, isPreviewHidden = false }: ChatSectionProps) {
+export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, onShowPreview, isSwapped = false, isPreviewHidden = false, courseTitle, onCourseTitleChange, isEditable = false }: ChatSectionProps) {
   const [input, setInput] = useState("")
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editedTitle, setEditedTitle] = useState(courseTitle || "Chat your way to a course outline")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setEditedTitle(courseTitle || "Chat your way to a course outline")
+  }, [courseTitle])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -63,6 +73,36 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
     })
   }
 
+  const handleEditTitle = () => {
+    setIsEditingTitle(true)
+    setTimeout(() => {
+      titleInputRef.current?.focus()
+      titleInputRef.current?.select()
+    }, 0)
+  }
+
+  const handleSaveTitle = () => {
+    if (onCourseTitleChange && editedTitle.trim()) {
+      onCourseTitleChange(editedTitle.trim())
+    }
+    setIsEditingTitle(false)
+  }
+
+  const handleCancelEdit = () => {
+    setEditedTitle(courseTitle || "Chat your way to a course outline")
+    setIsEditingTitle(false)
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSaveTitle()
+    } else if (e.key === "Escape") {
+      handleCancelEdit()
+    }
+  }
+
+  const displayTitle = courseTitle || "Chat your way to a course outline"
+
   return (
     <div className="flex flex-col h-screen bg-[#282C34]">
       {/* Header */}
@@ -86,9 +126,53 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
             <PanelLeftOpen className="w-5 h-5 text-[#5B6B83]" />
           </button>
         )}
-        <h1 className="text-2xl font-semibold text-[#E0E0E0]">
-          Chat your way to a course outline
-        </h1>
+        <div className="flex items-center gap-2 flex-1">
+          {isEditingTitle ? (
+            <div className="flex items-center gap-2 flex-1">
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onKeyDown={handleTitleKeyDown}
+                onBlur={handleSaveTitle}
+                className="text-2xl font-semibold text-[#E0E0E0] bg-transparent border-b-2 border-[#61AFEF] focus:outline-none flex-1"
+              />
+              <button
+                onClick={handleSaveTitle}
+                className="p-1 hover:bg-[#3E4451] rounded transition-colors cursor-pointer"
+                aria-label="Save title"
+                title="Save title"
+              >
+                <Check className="w-4 h-4 text-[#8DB472]" />
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="p-1 hover:bg-[#3E4451] rounded transition-colors cursor-pointer"
+                aria-label="Cancel edit"
+                title="Cancel edit"
+              >
+                <X className="w-4 h-4 text-[#E06C75]" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-2xl font-semibold text-[#E0E0E0]">
+                {displayTitle}
+              </h1>
+              {isEditable && onCourseTitleChange && (
+                <button
+                  onClick={handleEditTitle}
+                  className="p-1 hover:bg-[#3E4451] rounded transition-colors cursor-pointer"
+                  aria-label="Edit course title"
+                  title="Edit course title"
+                >
+                  <Pencil className="w-4 h-4 text-[#5B6B83]" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
         <div className="flex items-center gap-2 ml-auto">
           {!isSwapped && isPreviewHidden && onShowPreview && (
             <button

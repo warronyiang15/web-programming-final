@@ -12,10 +12,10 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/outline" element={<OutlinePage />} />
-        <Route path="/web-design" element={<WebDesignPage />} />
+        <Route path="/:id/upload" element={<UploadPage />} />
+        <Route path="/:id/outline" element={<OutlinePage />} />
+        <Route path="/:id/web-design" element={<WebDesignPage />} />
         <Route path="/web-preview" element={<FullPageWebPreviewPage />} />
-        <Route path="/upload" element={<UploadPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

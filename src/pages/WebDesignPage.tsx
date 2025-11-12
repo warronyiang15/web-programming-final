@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import type { MouseEvent as ReactMouseEvent } from "react"
 import "@/App.css"
 import { ChatSection } from "@/components/ChatSection"
@@ -48,6 +48,7 @@ export function WebDesignPage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const panelsRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
 
   const handleStepSelect = (step: 1 | 2 | 3) => {
     if (step === 1) {
@@ -63,9 +64,9 @@ export function WebDesignPage() {
   const handleConfirm = () => {
     setShowConfirmModal(false)
     if (stepToNavigate === 1) {
-      navigate("/upload")
+      id && navigate(`/${id}/upload`)
     } else if (stepToNavigate === 2) {
-      navigate("/outline")
+      id && navigate(`/${id}/outline`)
     }
     setStepToNavigate(null)
   }

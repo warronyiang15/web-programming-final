@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import type { MouseEvent as ReactMouseEvent } from "react"
 import "@/App.css"
 import { ChatSection } from "@/components/ChatSection"
@@ -89,19 +89,20 @@ export function OutlinePage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const panelsRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
 
   const handleStepSelect = (step: 1 | 2 | 3) => {
     if (step === 1) {
       setShowConfirmModal(true)
     } else if (step === 2) {
-      navigate("/web-design")
+      id && navigate(`/${id}/web-design`)
     }
     // Step 2 is current, but clicking it navigates to web-design
   }
 
   const handleConfirm = () => {
     setShowConfirmModal(false)
-    navigate("/upload")
+    id && navigate(`/${id}/upload`)
   }
 
   const handleCancel = () => {
@@ -248,6 +249,9 @@ export function OutlinePage() {
                   isLoading={isLoading}
                   onSwapPanels={handleSwapPanels}
                   isSwapped={isSwapped}
+                  courseTitle={courseData.title}
+                  onCourseTitleChange={(title) => setCourseData({ ...courseData, title })}
+                  isEditable={true}
                 />
               </div>
             </>
@@ -260,6 +264,9 @@ export function OutlinePage() {
                   isLoading={isLoading}
                   onSwapPanels={handleSwapPanels}
                   isSwapped={isSwapped}
+                  courseTitle={courseData.title}
+                  onCourseTitleChange={(title) => setCourseData({ ...courseData, title })}
+                  isEditable={true}
                 />
               </div>
 

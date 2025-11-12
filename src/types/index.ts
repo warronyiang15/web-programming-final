@@ -27,3 +27,12 @@ export const CourseDataSchema = z.object({
 
 export type CourseData = z.infer<typeof CourseDataSchema>
 
+export const ProjectSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  updatedAt: z.date(),
+  currentStep: z.enum(["1", "2", "3", "4"]),
+})
+
+export type Project = z.infer<typeof ProjectSchema>
+
