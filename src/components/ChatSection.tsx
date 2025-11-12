@@ -68,7 +68,7 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
         {isSwapped && onSwapPanels && (
           <button
             onClick={onSwapPanels}
-            className="p-2 hover:bg-[#3E4451] rounded-md transition-colors"
+            className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
             aria-label="Swap panels"
           >
             <ArrowLeftRight className="w-5 h-5 text-[#5B6B83]" />
@@ -80,7 +80,7 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
         {!isSwapped && onSwapPanels && (
           <button
             onClick={onSwapPanels}
-            className="p-2 hover:bg-[#3E4451] rounded-md transition-colors ml-auto"
+            className="p-2 hover:bg-[#3E4451] rounded-md transition-colors ml-auto cursor-pointer"
             aria-label="Swap panels"
           >
             <ArrowLeftRight className="w-5 h-5 text-[#5B6B83]" />
@@ -167,12 +167,12 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
             id="pdf-upload"
           />
           <div className="relative w-[80%] flex items-center">
-            <button
-              type="button"
-              onClick={handlePaperclipClick}
-              className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-2 hover:bg-[#3E4451]/50 rounded-md transition-colors z-10"
-              aria-label="Upload PDF file"
-            >
+          <button
+            type="button"
+            onClick={handlePaperclipClick}
+            className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-2 hover:bg-[#3E4451]/50 rounded-md transition-colors z-10 cursor-pointer"
+            aria-label="Upload PDF file"
+          >
               <Paperclip className="w-5 h-5 text-[#ABB2BF]" />
             </button>
             <textarea

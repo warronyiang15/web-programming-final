@@ -1,10 +1,67 @@
 import { useState, useEffect, useRef } from "react"
 import { Menu, X, User, CheckCircle2, Circle, LogOut, LayoutDashboard } from "lucide-react"
 
-export function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+type SidebarProps = {
+  currentStep?: 1 | 2 | 3
+  onStepSelect?: (step: 1 | 2 | 3) => void
+}
+
+type StepState = "completed" | "current" | "upcoming"
+
+export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const getStepState = (step: 1 | 2 | 3): StepState => {
+    if (step < currentStep) return "completed"
+    if (step === currentStep) return "current"
+    return "upcoming"
+  }
+
+  const getIcon = (state: StepState) => {
+    if (state === "completed") {
+      return <CheckCircle2 className="w-8 h-8 text-[#8DB472] flex-shrink-0" />
+    }
+
+    if (state === "current") {
+      return <Circle className="w-8 h-8 text-[#61AFEF] fill-[#61AFEF] flex-shrink-0" />
+    }
+
+    return <Circle className="w-8 h-8 text-[#5C6370] flex-shrink-0" />
+  }
+
+  const getCollapsedIcon = (state: StepState) => {
+    if (state === "completed") {
+      return <CheckCircle2 className="w-5 h-5 text-[#8DB472]" />
+    }
+
+    if (state === "current") {
+      return <Circle className="w-5 h-5 text-[#61AFEF] fill-[#61AFEF]" />
+    }
+
+    return <Circle className="w-5 h-5 text-[#5C6370]" />
+  }
+
+  const getStepTextClasses = (state: StepState) => {
+    if (state === "current") {
+      return "text-xs text-[#E0E0E0] font-semibold opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.2s_forwards] whitespace-nowrap"
+    }
+
+    if (state === "completed") {
+      return "text-xs text-[#8DB472] opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.1s_forwards] whitespace-nowrap"
+    }
+
+    return "text-xs text-[#5C6370] opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.3s_forwards] whitespace-nowrap"
+  }
+
+  const step1State = getStepState(1)
+  const step2State = getStepState(2)
+  const step3State = getStepState(3)
+
+  const isStepDisabled = (step: 1 | 2 | 3) => {
+    return step > currentStep
+  }
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed)
@@ -35,14 +92,27 @@ export function Sidebar() {
     setShowUserMenu(false)
   }
 
-  const handleStep1Click = () => {
-    // Dummy function for first step
-    console.log("Upload files clicked")
-  }
+  const handleStepClick = (step: 1 | 2 | 3) => {
+    if (isStepDisabled(step)) return
 
-  const handleStep2Click = () => {
-    // Dummy function for second step
-    console.log("Modify course outline clicked")
+    if (onStepSelect) {
+      onStepSelect(step)
+      return
+    }
+
+    switch (step) {
+      case 1:
+        console.log("Upload files clicked")
+        break
+      case 2:
+        console.log("Modify course outline clicked")
+        break
+      case 3:
+        console.log("Modify website interface clicked")
+        break
+      default:
+        break
+    }
   }
 
   // Close user menu when clicking outside
@@ -63,15 +133,12 @@ export function Sidebar() {
   }, [showUserMenu])
 
   return (
-    <div
-      className={`h-screen bg-[#1E2025] border-r border-[#3E4451] flex flex-col transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"
-        }`}
-    >
+    <div className={`h-screen bg-[#1E2025] border-r border-[#3E4451] flex flex-col transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"}`}>
       {/* Hamburger Menu */}
       <div className="relative p-4">
         <button
           onClick={toggleSidebar}
-          className="absolute top-4 left-3 w-10 h-10 flex items-center justify-center p-2 rounded-md hover:bg-[#282C34] transition-colors flex-shrink-0"
+          className="absolute top-4 left-3 w-10 h-10 flex items-center justify-center p-2 rounded-md hover:bg-[#282C34] transition-colors flex-shrink-0 cursor-pointer"
           aria-label="Toggle sidebar"
         >
           {isCollapsed ? (
@@ -87,34 +154,47 @@ export function Sidebar() {
         <div className="flex-1 flex flex-col items-start justify-center py-8 gap-4 px-4">
           {/* Step 1 - Completed */}
           <button
-            onClick={handleStep1Click}
-            className="w-full flex items-center gap-3 hover:bg-[#282C34] rounded-md p-2 transition-colors"
+            onClick={() => handleStepClick(1)}
+            className="w-full flex items-center gap-3 hover:bg-[#282C34] rounded-md p-2 transition-colors cursor-pointer"
             aria-label="Upload files"
           >
-            <CheckCircle2 className="w-8 h-8 text-[#8DB472] flex-shrink-0" />
-            <span className="text-xs text-[#5C6370] opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.1s_forwards] whitespace-nowrap">Upload files</span>
+            {getIcon(step1State)}
+            <span className={getStepTextClasses(step1State)}>Upload files</span>
           </button>
 
           {/* Connector Line */}
-          <div className="w-px h-8 bg-[#3E4451] ml-[1.5rem]" />
+          <div className={`w-px h-8 ml-[1.5rem] ${step1State === "completed" ? "bg-[#61AFEF]" : "bg-[#3E4451]"}`} />
 
           {/* Step 2 - Current */}
           <button
-            onClick={handleStep2Click}
-            className="w-full flex items-center gap-3 hover:bg-[#282C34] rounded-md p-2 transition-colors"
+            onClick={() => handleStepClick(2)}
+            disabled={isStepDisabled(2)}
+            className={`w-full flex items-center gap-3 rounded-md p-2 transition-colors ${
+              isStepDisabled(2)
+                ? "cursor-not-allowed opacity-50"
+                : "hover:bg-[#282C34] cursor-pointer"
+            }`}
             aria-label="Modify course outline"
           >
-            <Circle className="w-8 h-8 text-[#61AFEF] fill-[#61AFEF] flex-shrink-0" />
-            <span className="text-xs text-[#E0E0E0] font-semibold opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.2s_forwards] whitespace-nowrap">Modify course outline</span>
+            {getIcon(step2State)}
+            <span className={getStepTextClasses(step2State)}>Modify course outline</span>
           </button>
 
           {/* Connector Line */}
-          <div className="w-px h-8 bg-[#3E4451] ml-[1.5rem]" />
+          <div className={`w-px h-8 ml-[1.5rem] ${step2State === "completed" ? "bg-[#61AFEF]" : "bg-[#3E4451]"}`} />
 
           {/* Step 3 - Upcoming */}
-          <button className="w-full flex items-center gap-3 hover:bg-[#282C34] rounded-md p-2 transition-colors">
-            <Circle className="w-8 h-8 text-[#5C6370] flex-shrink-0" />
-            <span className="text-xs text-[#5C6370] opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.3s_forwards] whitespace-nowrap">Modify website interface</span>
+          <button
+            onClick={() => handleStepClick(3)}
+            disabled={isStepDisabled(3)}
+            className={`w-full flex items-center gap-3 rounded-md p-2 transition-colors ${
+              isStepDisabled(3)
+                ? "cursor-not-allowed opacity-50"
+                : "hover:bg-[#282C34] cursor-pointer"
+            }`}
+          >
+            {getIcon(step3State)}
+            <span className={getStepTextClasses(step3State)}>Modify website interface</span>
           </button>
         </div>
       )}
@@ -123,22 +203,38 @@ export function Sidebar() {
       {isCollapsed && (
         <div className="flex-1 flex flex-col items-center justify-center py-8 gap-4">
           <button
-            onClick={handleStep1Click}
-            className="hover:bg-[#282C34] rounded-md p-1 transition-colors"
+            onClick={() => handleStepClick(1)}
+            className="hover:bg-[#282C34] rounded-md p-1 transition-colors cursor-pointer"
             aria-label="Upload files"
           >
-            <CheckCircle2 className="w-5 h-5 text-[#8DB472]" />
+            {getCollapsedIcon(step1State)}
           </button>
-          <div className="w-px h-6 bg-[#3E4451]" />
+          <div className={`w-px h-6 ${step1State === "completed" ? "bg-[#61AFEF]" : "bg-[#3E4451]"}`} />
           <button
-            onClick={handleStep2Click}
-            className="hover:bg-[#282C34] rounded-md p-1 transition-colors"
+            onClick={() => handleStepClick(2)}
+            disabled={isStepDisabled(2)}
+            className={`rounded-md p-1 transition-colors ${
+              isStepDisabled(2)
+                ? "cursor-not-allowed opacity-50"
+                : "hover:bg-[#282C34] cursor-pointer"
+            }`}
             aria-label="Modify course outline"
           >
-            <Circle className="w-5 h-5 text-[#61AFEF] fill-[#61AFEF]" />
+            {getCollapsedIcon(step2State)}
           </button>
-          <div className="w-px h-6 bg-[#3E4451]" />
-          <Circle className="w-5 h-5 text-[#5C6370]" />
+          <div className={`w-px h-6 ${step2State === "completed" ? "bg-[#61AFEF]" : "bg-[#3E4451]"}`} />
+          <button
+            onClick={() => handleStepClick(3)}
+            disabled={isStepDisabled(3)}
+            className={`rounded-md p-1 transition-colors ${
+              isStepDisabled(3)
+                ? "cursor-not-allowed opacity-50"
+                : "hover:bg-[#282C34] cursor-pointer"
+            }`}
+            aria-label="Modify website interface"
+          >
+            {getCollapsedIcon(step3State)}
+          </button>
         </div>
       )}
 
@@ -147,7 +243,7 @@ export function Sidebar() {
         {isCollapsed ? (
           <button
             onClick={handleUserClick}
-            className="w-10 h-10 rounded-full bg-[#282C34] flex items-center justify-center border border-[#3E4451] hover:bg-[#3E4451] transition-colors flex-shrink-0"
+            className="w-10 h-10 rounded-full bg-[#282C34] flex items-center justify-center border border-[#3E4451] hover:bg-[#3E4451] transition-colors flex-shrink-0 cursor-pointer"
             aria-label="User menu"
           >
             <User className="w-5 h-5 text-[#E0E0E0]" />
@@ -155,7 +251,7 @@ export function Sidebar() {
         ) : (
           <button
             onClick={handleUserClick}
-            className="w-full flex items-center gap-3 hover:bg-[#282C34] rounded-md p-2 transition-colors"
+            className="w-full flex items-center gap-3 hover:bg-[#282C34] rounded-md p-2 transition-colors cursor-pointer"
             aria-label="User menu"
           >
             <div className="w-10 h-10 rounded-full bg-[#282C34] flex items-center justify-center border border-[#3E4451] flex-shrink-0">
@@ -172,7 +268,7 @@ export function Sidebar() {
               {/* Dashboard Button */}
               <button
                 onClick={handleDashboard}
-                className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-[#3E4451] transition-colors text-sm text-[#E0E0E0] ${isCollapsed ? "justify-center" : ""}`}
+                className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-[#3E4451] transition-colors text-sm text-[#E0E0E0] cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
               >
                 <LayoutDashboard className="w-4 h-4 text-[#E0E0E0]" />
                 {!isCollapsed && <span>Dashboard</span>}
@@ -184,7 +280,7 @@ export function Sidebar() {
               {/* Logout Button */}
               <button
                 onClick={handleLogout}
-                className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-[#3E4451] transition-colors text-sm text-red-400 ${isCollapsed ? "justify-center" : ""}`}
+                className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-[#3E4451] transition-colors text-sm text-red-400 cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
               >
                 <LogOut className="w-4 h-4 text-red-400" />
                 {!isCollapsed && <span>Logout</span>}

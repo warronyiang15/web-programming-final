@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import type { MouseEvent as ReactMouseEvent } from "react"
 import "@/App.css"
 import { ChatSection } from "@/components/ChatSection"
@@ -85,6 +86,7 @@ export function OutlinePage() {
   const [isSwapped, setIsSwapped] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const panelsRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
@@ -186,7 +188,7 @@ export function OutlinePage() {
 
   return (
     <div ref={containerRef} className="flex h-screen bg-[#21252B] overflow-hidden">
-      <Sidebar />
+      <Sidebar onStepSelect={(step) => step === 1 && navigate("/upload")} />
 
       {!isChatHidden && (
         <div ref={panelsRef} className="flex flex-1">

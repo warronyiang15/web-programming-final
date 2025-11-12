@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { HomePage } from "@/pages/HomePage"
 import { OutlinePage } from "@/pages/OutlinePage"
+import { UploadPage } from "@/pages/UploadPage"
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/outline" element={<OutlinePage />} />
+        <Route path="/upload" element={<UploadPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
