@@ -14,6 +14,70 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  
+  // Theme state
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+    return savedTheme || "dark"
+  })
+
+  // Listen for theme changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
+    }
+    window.addEventListener("storage", handleStorageChange)
+    const interval = setInterval(() => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme && savedTheme !== theme) {
+        setTheme(savedTheme)
+      }
+    }, 100)
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [theme])
+
+  // Theme-aware color helpers
+  const getSidebarBg = () => {
+    if (theme === "light") return "bg-gray-50"
+    return "bg-[#1E2025]"
+  }
+
+  const getBorderColor = () => {
+    if (theme === "light") return "border-gray-200"
+    return "border-[#3E4451]"
+  }
+
+  const getTextColor = () => {
+    if (theme === "light") return "text-gray-800"
+    return "text-[#E0E0E0]"
+  }
+
+  const getHoverBg = () => {
+    if (theme === "light") return "hover:bg-gray-100"
+    return "hover:bg-[#282C34]"
+  }
+
+  const getCardBg = () => {
+    if (theme === "light") return "bg-white"
+    return "bg-[#282C34]"
+  }
+
+  const getMutedText = () => {
+    if (theme === "light") return "text-gray-600"
+    return "text-[#5C6370]"
+  }
+
+  const getConnectorColor = (isCompleted: boolean) => {
+    if (isCompleted) return "bg-[#61AFEF]"
+    if (theme === "light") return "bg-gray-300"
+    return "bg-[#3E4451]"
+  }
 
   const getStepState = (step: 1 | 2 | 3): StepState => {
     if (step < currentStep) return "completed"
@@ -47,14 +111,14 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
 
   const getStepTextClasses = (state: StepState) => {
     if (state === "current") {
-      return "text-xs text-[#E0E0E0] font-semibold opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.2s_forwards] whitespace-nowrap"
+      return `text-xs ${getTextColor()} font-semibold opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.2s_forwards] whitespace-nowrap`
     }
 
     if (state === "completed") {
       return "text-xs text-[#8DB472] opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.1s_forwards] whitespace-nowrap"
     }
 
-    return "text-xs text-[#5C6370] opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.3s_forwards] whitespace-nowrap"
+    return `text-xs ${getMutedText()} opacity-0 animate-[fadeIn_0.3s_ease-in-out_0.3s_forwards] whitespace-nowrap`
   }
 
   const step1State = getStepState(1)
@@ -134,18 +198,18 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
   }, [showUserMenu])
 
   return (
-    <div className={`h-screen bg-[#1E2025] border-r border-[#3E4451] flex flex-col transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"}`}>
+    <div className={`h-screen ${getSidebarBg()} border-r ${getBorderColor()} flex flex-col transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"}`}>
       {/* Hamburger Menu */}
       <div className="relative p-4">
         <button
           onClick={toggleSidebar}
-          className="absolute top-4 left-3 w-10 h-10 flex items-center justify-center p-2 rounded-md hover:bg-[#282C34] transition-colors flex-shrink-0 cursor-pointer"
+          className={`absolute top-4 left-3 w-10 h-10 flex items-center justify-center p-2 rounded-md ${getHoverBg()} transition-colors flex-shrink-0 cursor-pointer`}
           aria-label="Toggle sidebar"
         >
           {isCollapsed ? (
-            <Menu className="w-5 h-5 text-[#E0E0E0]" />
+            <Menu className={`w-5 h-5 ${getTextColor()}`} />
           ) : (
-            <X className="w-5 h-5 text-[#E0E0E0]" />
+            <X className={`w-5 h-5 ${getTextColor()}`} />
           )}
         </button>
       </div>
@@ -156,7 +220,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
           {/* Step 1 - Completed */}
           <button
             onClick={() => handleStepClick(1)}
-            className="w-full flex items-center gap-3 hover:bg-[#282C34] rounded-md p-2 transition-colors cursor-pointer"
+            className={`w-full flex items-center gap-3 ${getHoverBg()} rounded-md p-2 transition-colors cursor-pointer`}
             aria-label="Upload files"
           >
             {getIcon(step1State)}
@@ -164,7 +228,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
           </button>
 
           {/* Connector Line */}
-          <div className={`w-px h-8 ml-[1.5rem] ${step1State === "completed" ? "bg-[#61AFEF]" : "bg-[#3E4451]"}`} />
+          <div className={`w-px h-8 ml-[1.5rem] ${getConnectorColor(step1State === "completed")}`} />
 
           {/* Step 2 - Current */}
           <button
@@ -173,7 +237,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
             className={`w-full flex items-center gap-3 rounded-md p-2 transition-colors ${
               isStepDisabled(2)
                 ? "cursor-not-allowed opacity-50"
-                : "hover:bg-[#282C34] cursor-pointer"
+                : `${getHoverBg()} cursor-pointer`
             }`}
             aria-label="Modify course outline"
           >
@@ -182,7 +246,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
           </button>
 
           {/* Connector Line */}
-          <div className={`w-px h-8 ml-[1.5rem] ${step2State === "completed" ? "bg-[#61AFEF]" : "bg-[#3E4451]"}`} />
+          <div className={`w-px h-8 ml-[1.5rem] ${getConnectorColor(step2State === "completed")}`} />
 
           {/* Step 3 - Upcoming */}
           <button
@@ -191,7 +255,7 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
             className={`w-full flex items-center gap-3 rounded-md p-2 transition-colors ${
               isStepDisabled(3)
                 ? "cursor-not-allowed opacity-50"
-                : "hover:bg-[#282C34] cursor-pointer"
+                : `${getHoverBg()} cursor-pointer`
             }`}
           >
             {getIcon(step3State)}
@@ -205,32 +269,32 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
         <div className="flex-1 flex flex-col items-center justify-center py-8 gap-4">
           <button
             onClick={() => handleStepClick(1)}
-            className="hover:bg-[#282C34] rounded-md p-1 transition-colors cursor-pointer"
+            className={`${getHoverBg()} rounded-md p-1 transition-colors cursor-pointer`}
             aria-label="Upload files"
           >
             {getCollapsedIcon(step1State)}
           </button>
-          <div className={`w-px h-6 ${step1State === "completed" ? "bg-[#61AFEF]" : "bg-[#3E4451]"}`} />
+          <div className={`w-px h-6 ${getConnectorColor(step1State === "completed")}`} />
           <button
             onClick={() => handleStepClick(2)}
             disabled={isStepDisabled(2)}
             className={`rounded-md p-1 transition-colors ${
               isStepDisabled(2)
                 ? "cursor-not-allowed opacity-50"
-                : "hover:bg-[#282C34] cursor-pointer"
+                : `${getHoverBg()} cursor-pointer`
             }`}
             aria-label="Modify course outline"
           >
             {getCollapsedIcon(step2State)}
           </button>
-          <div className={`w-px h-6 ${step2State === "completed" ? "bg-[#61AFEF]" : "bg-[#3E4451]"}`} />
+          <div className={`w-px h-6 ${getConnectorColor(step2State === "completed")}`} />
           <button
             onClick={() => handleStepClick(3)}
             disabled={isStepDisabled(3)}
             className={`rounded-md p-1 transition-colors ${
               isStepDisabled(3)
                 ? "cursor-not-allowed opacity-50"
-                : "hover:bg-[#282C34] cursor-pointer"
+                : `${getHoverBg()} cursor-pointer`
             }`}
             aria-label="Modify website layout"
           >
@@ -244,46 +308,46 @@ export function Sidebar({ currentStep = 2, onStepSelect }: SidebarProps) {
         {isCollapsed ? (
           <button
             onClick={handleUserClick}
-            className="w-10 h-10 rounded-full bg-[#282C34] flex items-center justify-center border border-[#3E4451] hover:bg-[#3E4451] transition-colors flex-shrink-0 cursor-pointer"
+            className={`w-10 h-10 rounded-full ${getCardBg()} flex items-center justify-center border ${getBorderColor()} ${theme === "light" ? "hover:bg-gray-200" : "hover:bg-[#3E4451]"} transition-colors flex-shrink-0 cursor-pointer`}
             aria-label="User menu"
           >
-            <User className="w-5 h-5 text-[#E0E0E0]" />
+            <User className={`w-5 h-5 ${getTextColor()}`} />
           </button>
         ) : (
           <button
             onClick={handleUserClick}
-            className="w-full flex items-center gap-3 hover:bg-[#282C34] rounded-md p-2 transition-colors cursor-pointer"
+            className={`w-full flex items-center gap-3 ${getHoverBg()} rounded-md p-2 transition-colors cursor-pointer`}
             aria-label="User menu"
           >
-            <div className="w-10 h-10 rounded-full bg-[#282C34] flex items-center justify-center border border-[#3E4451] flex-shrink-0">
-              <User className="w-5 h-5 text-[#E0E0E0]" />
+            <div className={`w-10 h-10 rounded-full ${getCardBg()} flex items-center justify-center border ${getBorderColor()} flex-shrink-0`}>
+              <User className={`w-5 h-5 ${getTextColor()}`} />
             </div>
-            <span className="text-sm text-[#E0E0E0] font-medium">Guest</span>
+            <span className={`text-sm ${getTextColor()} font-medium`}>Guest</span>
           </button>
         )}
 
         {/* User Menu */}
         {showUserMenu && (
           <div className={`absolute bottom-full mb-2 ${isCollapsed ? "left-0 right-0" : "left-4 right-4"}`}>
-            <div className="bg-[#282C34] border border-[#3E4451] rounded-md shadow-lg overflow-hidden flex flex-col gap-0">
+            <div className={`${getCardBg()} border ${getBorderColor()} rounded-md shadow-lg overflow-hidden flex flex-col gap-0`}>
               {/* Dashboard Button */}
               <button
                 onClick={handleDashboard}
-                className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-[#3E4451] transition-colors text-sm text-[#E0E0E0] cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
+                className={`w-full flex items-center gap-3 px-4 py-2 ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-[#3E4451]"} transition-colors text-sm ${getTextColor()} cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
               >
-                <LayoutDashboard className="w-4 h-4 text-[#E0E0E0]" />
+                <LayoutDashboard className={`w-4 h-4 ${getTextColor()}`} />
                 {!isCollapsed && <span>Dashboard</span>}
               </button>
 
               {/* Divider */}
-              <div className="h-px bg-[#3E4451]" />
+              <div className={`h-px ${getBorderColor()}`} />
 
               {/* Logout Button */}
               <button
                 onClick={handleLogout}
-                className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-[#3E4451] transition-colors text-sm text-red-400 cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
+                className={`w-full flex items-center gap-3 px-4 py-2 ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-[#3E4451]"} transition-colors text-sm text-red-600 dark:text-red-400 cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
               >
-                <LogOut className="w-4 h-4 text-red-400" />
+                <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
                 {!isCollapsed && <span>Logout</span>}
               </button>
             </div>

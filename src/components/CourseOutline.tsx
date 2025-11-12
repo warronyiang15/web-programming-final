@@ -17,6 +17,79 @@ export function CourseOutline({ courseData, onToggleChat, isChatHidden, isSwappe
     new Set(outline.map((item) => item.id))
   )
 
+  // Theme state
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+    return savedTheme || "dark"
+  })
+
+  // Listen for theme changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
+    }
+    window.addEventListener("storage", handleStorageChange)
+    const interval = setInterval(() => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme && savedTheme !== theme) {
+        setTheme(savedTheme)
+      }
+    }, 100)
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [theme])
+
+  // Theme-aware color helpers
+  const getBgColor = () => {
+    if (theme === "light") return "bg-gray-50"
+    return "bg-[#1E2025]"
+  }
+
+  const getBorderColor = () => {
+    if (theme === "light") return "border-gray-200"
+    return "border-[#3E4451]"
+  }
+
+  const getTextColor = () => {
+    if (theme === "light") return "text-gray-800"
+    return "text-[#E0E0E0]"
+  }
+
+  const getMutedText = () => {
+    if (theme === "light") return "text-gray-600"
+    return "text-[#5B6B83]"
+  }
+
+  const getHoverBg = () => {
+    if (theme === "light") return "hover:bg-gray-100"
+    return "hover:bg-[#3E4451]"
+  }
+
+  const getCardBg = () => {
+    if (theme === "light") return "bg-white"
+    return "bg-[#111620]"
+  }
+
+  const getCardBorder = () => {
+    if (theme === "light") return "border-gray-300"
+    return "border-[#3E4451]"
+  }
+
+  const getCardHoverBorder = () => {
+    if (theme === "light") return "hover:border-blue-400"
+    return "hover:border-[#61AFEF]/50"
+  }
+
+  const getDividerColor = () => {
+    if (theme === "light") return "bg-gray-200"
+    return "bg-[#3E4451]"
+  }
+
   // Update expanded modules when outline changes
   useEffect(() => {
     setExpandedModules(new Set(outline.map((item) => item.id)))
@@ -35,7 +108,7 @@ export function CourseOutline({ courseData, onToggleChat, isChatHidden, isSwappe
   }
 
   return (
-    <div className="h-screen bg-[#1E2025] flex flex-col">
+    <div className={`h-screen ${getBgColor()} flex flex-col`}>
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 p-6 pb-0">
         <div className="mb-6">
@@ -43,42 +116,42 @@ export function CourseOutline({ courseData, onToggleChat, isChatHidden, isSwappe
             {!isSwapped && (
               <button
                 onClick={onToggleChat}
-                className="hover:bg-[#3E4451] rounded p-1 transition-colors"
+                className={`${getHoverBg()} rounded p-1 transition-colors`}
                 aria-label="Toggle chat section"
               >
                 {isChatHidden ? (
-                  <ChevronLast className="w-5 h-5 text-[#5B6B83] cursor-pointer" />
+                  <ChevronLast className={`w-5 h-5 ${getMutedText()} cursor-pointer`} />
                 ) : (
-                  <ChevronFirst className="w-5 h-5 text-[#5B6B83] cursor-pointer" />
+                  <ChevronFirst className={`w-5 h-5 ${getMutedText()} cursor-pointer`} />
                 )}
               </button>
             )}
-            <h2 className="text-sm font-semibold text-[#5B6B83] uppercase tracking-[0.4rem]">
+            <h2 className={`text-sm font-semibold ${getMutedText()} uppercase tracking-[0.4rem]`}>
               Course Outline
             </h2>
             {isSwapped && (
               <button
                 onClick={onToggleChat}
-                className="hover:bg-[#3E4451] rounded p-1 transition-colors"
+                className={`${getHoverBg()} rounded p-1 transition-colors`}
                 aria-label="Toggle chat section"
               >
                 {isChatHidden ? (
-                  <ChevronFirst className="w-5 h-5 text-[#5B6B83] cursor-pointer" />
+                  <ChevronFirst className={`w-5 h-5 ${getMutedText()} cursor-pointer`} />
                 ) : (
-                  <ChevronLast className="w-5 h-5 text-[#5B6B83] cursor-pointer" />
+                  <ChevronLast className={`w-5 h-5 ${getMutedText()} cursor-pointer`} />
                 )}
               </button>
             )}
           </div>
           {title && (
-            <h3 className="text-xl font-semibold text-[#E0E0E0] mb-6">
+            <h3 className={`text-xl font-semibold ${getTextColor()} mb-6`}>
               {title}
             </h3>
           )}
         </div>
 
         {outline.length > 0 && (
-          <div className="w-full h-px bg-[#3E4451] mb-6"></div>
+          <div className={`w-full h-px ${getDividerColor()} mb-6`}></div>
         )}
       </div>
 
@@ -88,8 +161,8 @@ export function CourseOutline({ courseData, onToggleChat, isChatHidden, isSwappe
           <Card>
             <CardContent className="pt-6">
               <div className="text-center py-8">
-                <BookOpen className="w-12 h-12 mx-auto text-[#5C6370] mb-4" />
-                <p className="text-[#5C6370]">
+                <BookOpen className={`w-12 h-12 mx-auto ${theme === "light" ? "text-gray-400" : "text-[#5C6370]"} mb-4`} />
+                <p className={theme === "light" ? "text-gray-500" : "text-[#5C6370]"}>
                   Course outline will appear here as you chat
                 </p>
               </div>
@@ -104,30 +177,30 @@ export function CourseOutline({ courseData, onToggleChat, isChatHidden, isSwappe
               return (
                 <Card
                   key={item.id}
-                  className="border-[#3E4451] bg-[#111620] hover:border-[#61AFEF]/50 transition-colors"
+                  className={`${getCardBorder()} ${getCardBg()} ${getCardHoverBorder()} transition-colors`}
                 >
                   <CardHeader className="py-4 px-6">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="mb-3">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
-                            <span className="flex-shrink-0 text-xs font-medium text-[#5B6B83] tracking-[0.3rem]">
+                            <span className={`flex-shrink-0 text-xs font-medium ${getMutedText()} tracking-[0.3rem]`}>
                               MODULE {moduleNumber}
                             </span>
                             {item.week && (
-                              <span className="w-full sm:w-auto text-[10px] font-medium text-[#8DB472] bg-[#1C212C] tracking-wider px-2 py-1 rounded-full text-center sm:text-left">
+                              <span className={`w-full sm:w-auto text-[10px] font-medium text-[#8DB472] ${theme === "light" ? "bg-green-50" : "bg-[#1C212C]"} tracking-wider px-2 py-1 rounded-full text-center sm:text-left`}>
                                 WEEK {item.week}
                               </span>
                             )}
                           </div>
-                          <h3 className="text-base font-semibold text-[#E0E0E0] py-1">
+                          <h3 className={`text-base font-semibold ${getTextColor()} py-1`}>
                             {item.title}
                           </h3>
                         </div>
                         {isExpanded && item.topics && item.topics.length > 0 && (
                           <ul className="space-y-2 mt-3 list-disc list-inside">
                             {item.topics.map((topic, topicIndex) => (
-                              <li key={topicIndex} className="text-sm text-[#E0E0E0]">
+                              <li key={topicIndex} className={`text-sm ${getTextColor()}`}>
                                 {topic}
                               </li>
                             ))}
@@ -136,13 +209,13 @@ export function CourseOutline({ courseData, onToggleChat, isChatHidden, isSwappe
                       </div>
                       <button
                         onClick={() => toggleModule(item.id)}
-                        className="flex-shrink-0 w-6 h-6 rounded-full hover:bg-[#3E4451] flex items-center justify-center transition-colors"
+                        className={`flex-shrink-0 w-6 h-6 rounded-full ${getHoverBg()} flex items-center justify-center transition-colors`}
                         aria-label={isExpanded ? "Collapse module" : "Expand module"}
                       >
                         {isExpanded ? (
-                          <ChevronDown className="w-4 h-4 text-[#5C6370]" />
+                          <ChevronDown className={`w-4 h-4 ${theme === "light" ? "text-gray-500" : "text-[#5C6370]"}`} />
                         ) : (
-                          <ChevronLeft className="w-4 h-4 text-[#5C6370]" />
+                          <ChevronLeft className={`w-4 h-4 ${theme === "light" ? "text-gray-500" : "text-[#5C6370]"}`} />
                         )}
                       </button>
                     </div>

@@ -49,6 +49,71 @@ export function WebDesignPage() {
   const panelsRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  
+  // Theme state
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+    return savedTheme || "dark"
+  })
+
+  // Apply theme on mount and when theme changes
+  useEffect(() => {
+    document.documentElement.classList.remove("dark", "theme-light")
+    
+    if (theme === "system") {
+      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+      document.documentElement.classList.toggle("dark", systemPrefersDark)
+
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      const handleChange = (e: MediaQueryListEvent) => {
+        document.documentElement.classList.remove("theme-light")
+        document.documentElement.classList.toggle("dark", e.matches)
+      }
+      mediaQuery.addEventListener("change", handleChange)
+      return () => mediaQuery.removeEventListener("change", handleChange)
+    } else if (theme === "light") {
+      document.documentElement.classList.add("theme-light")
+    } else {
+      document.documentElement.classList.add("dark")
+    }
+  }, [theme])
+
+  // Listen for theme changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
+    }
+    window.addEventListener("storage", handleStorageChange)
+    const interval = setInterval(() => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme && savedTheme !== theme) {
+        setTheme(savedTheme)
+      }
+    }, 100)
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [theme])
+
+  // Theme-aware color helpers
+  const getBgColor = () => {
+    if (theme === "light") return "bg-white"
+    return "bg-[#21252B]"
+  }
+
+  const getBorderColor = () => {
+    if (theme === "light") return "border-gray-200"
+    return "border-[#3E4451]"
+  }
+
+  const getResizerColor = () => {
+    if (theme === "light") return "bg-gray-300"
+    return "bg-[#3E4451]"
+  }
 
   const handleStepSelect = (step: 1 | 2 | 3) => {
     if (step === 1) {
@@ -152,7 +217,7 @@ export function WebDesignPage() {
   }
 
   return (
-    <div ref={containerRef} className="flex h-screen bg-[#21252B] overflow-hidden">
+    <div ref={containerRef} className={`flex h-screen ${getBgColor()} overflow-hidden`}>
       <Sidebar currentStep={3} onStepSelect={handleStepSelect} />
       
       <Modal
@@ -168,19 +233,20 @@ export function WebDesignPage() {
         <div ref={panelsRef} className="flex flex-1">
           {isSwapped ? (
             <>
-              <div className="flex flex-col border-r border-[#3E4451]" style={{ width: `${100 - chatWidth}%` }}>
+              <div className={`flex flex-col border-r ${getBorderColor()}`} style={{ width: `${100 - chatWidth}%` }}>
                 <WebPreview
                   onToggleChat={() => setIsChatHidden(!isChatHidden)}
                   onHidePreview={() => setIsPreviewHidden(true)}
                   onShowChat={() => setIsChatHidden(false)}
                   isChatHidden={isChatHidden}
                   isSwapped={isSwapped}
+                  id={id}
                 />
               </div>
 
               <div className="relative group" style={{ userSelect: "none" }}>
                 <div
-                  className={`w-1 bg-[#3E4451] hover:bg-[#61AFEF] transition-colors h-full ${
+                  className={`w-1 ${getResizerColor()} hover:bg-[#61AFEF] transition-colors h-full ${
                     isResizing ? "bg-[#61AFEF]" : ""
                   }`}
                 />
@@ -201,7 +267,7 @@ export function WebDesignPage() {
             </>
           ) : (
             <>
-              <div className="flex flex-col border-r border-[#3E4451]" style={{ width: `${chatWidth}%` }}>
+              <div className={`flex flex-col border-r ${getBorderColor()}`} style={{ width: `${chatWidth}%` }}>
                 <ChatSection
                   messages={messages}
                   onSendMessage={handleSendMessage}
@@ -215,7 +281,7 @@ export function WebDesignPage() {
 
               <div className="relative group" style={{ userSelect: "none" }}>
                 <div
-                  className={`w-1 bg-[#3E4451] hover:bg-[#61AFEF] transition-colors h-full ${
+                  className={`w-1 ${getResizerColor()} hover:bg-[#61AFEF] transition-colors h-full ${
                     isResizing ? "bg-[#61AFEF]" : ""
                   }`}
                 />
@@ -229,6 +295,7 @@ export function WebDesignPage() {
                   onShowChat={() => setIsChatHidden(false)}
                   isChatHidden={isChatHidden}
                   isSwapped={isSwapped}
+                  id={id}
                 />
               </div>
             </>
@@ -244,6 +311,7 @@ export function WebDesignPage() {
             onShowChat={() => setIsChatHidden(false)}
             isChatHidden={isChatHidden}
             isSwapped={isSwapped}
+            id={id}
           />
         </div>
       )}

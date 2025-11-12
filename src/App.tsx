@@ -18,7 +18,7 @@ function App() {
         <Route path="/:id/upload" element={<UploadPage />} />
         <Route path="/:id/outline" element={<OutlinePage />} />
         <Route path="/:id/web-design" element={<WebDesignPage />} />
-        <Route path="/web-preview" element={<FullPageWebPreviewPage />} />
+        <Route path="/:id/web-preview" element={<FullPageWebPreviewPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

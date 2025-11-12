@@ -815,7 +815,10 @@ export function DashboardPage() {
               <button
                 onClick={handleDeleteConfirm}
                 disabled={deleteConfirmText !== "DELETE"}
-                className="px-4 py-2 rounded-md bg-red-900/50 text-red-400 text-sm font-medium transition hover:bg-red-900/70 border border-red-800/50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition border disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${theme === "light"
+                  ? "bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                  : "bg-red-900/50 text-red-400 hover:bg-red-900/70 border-red-800/50"
+                  }`}
               >
                 Delete Account
               </button>

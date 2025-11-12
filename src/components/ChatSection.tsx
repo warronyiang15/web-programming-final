@@ -23,6 +23,94 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
+  
+  // Theme state
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+    return savedTheme || "dark"
+  })
+
+  // Listen for theme changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
+    }
+    window.addEventListener("storage", handleStorageChange)
+    const interval = setInterval(() => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme && savedTheme !== theme) {
+        setTheme(savedTheme)
+      }
+    }, 100)
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [theme])
+
+  // Theme-aware color helpers
+  const getBgColor = () => {
+    if (theme === "light") return "bg-gray-50"
+    return "bg-[#282C34]"
+  }
+
+  const getBorderColor = () => {
+    if (theme === "light") return "border-gray-200"
+    return "border-[#3E4451]"
+  }
+
+  const getTextColor = () => {
+    if (theme === "light") return "text-gray-800"
+    return "text-[#E0E0E0]"
+  }
+
+  const getMutedText = () => {
+    if (theme === "light") return "text-gray-600"
+    return "text-[#5C6370]"
+  }
+
+  const getHoverBg = () => {
+    if (theme === "light") return "hover:bg-gray-100"
+    return "hover:bg-[#3E4451]"
+  }
+
+  const getInputBg = () => {
+    if (theme === "light") return "bg-white"
+    return "bg-[#505050]"
+  }
+
+  const getInputBorder = () => {
+    if (theme === "light") return "border-gray-300"
+    return "border-[#3E4451]"
+  }
+
+  const getInputText = () => {
+    if (theme === "light") return "text-gray-900"
+    return "text-white"
+  }
+
+  const getInputPlaceholder = () => {
+    if (theme === "light") return "placeholder:text-gray-400"
+    return "placeholder:text-[#B0B0B0]"
+  }
+
+  const getInputAreaBg = () => {
+    if (theme === "light") return "bg-white"
+    return "bg-[#1E2025]"
+  }
+
+  const getUserMessageBg = () => {
+    if (theme === "light") return "bg-blue-100 text-gray-800 border-blue-200"
+    return "bg-[#33365D] text-[#E0E0E0] border-[#444985]"
+  }
+
+  const getAssistantMessageBg = () => {
+    if (theme === "light") return "bg-gray-100 text-gray-800 border-gray-200"
+    return "bg-[#1D2434] text-[#E0E0E0] border-[#252C3C]"
+  }
 
   useEffect(() => {
     setEditedTitle(courseTitle || "Chat your way to a course outline")
@@ -104,26 +192,26 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
   const displayTitle = courseTitle || "Chat your way to a course outline"
 
   return (
-    <div className="flex flex-col h-screen bg-[#282C34]">
+    <div className={`flex flex-col h-screen ${getBgColor()}`}>
       {/* Header */}
-      <div className="border-b border-[#3E4451] px-6 py-5 flex items-center gap-3">
+      <div className={`border-b ${getBorderColor()} px-6 py-5 flex items-center gap-3`}>
         {isSwapped && onSwapPanels && !isPreviewHidden && (
           <button
             onClick={onSwapPanels}
-            className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
+            className={`p-2 ${getHoverBg()} rounded-md transition-colors cursor-pointer`}
             aria-label="Swap panels"
           >
-            <ArrowLeftRight className="w-5 h-5 text-[#5B6B83]" />
+            <ArrowLeftRight className={`w-5 h-5 ${getMutedText()}`} />
           </button>
         )}
         {isSwapped && isPreviewHidden && onShowPreview && (
           <button
             onClick={onShowPreview}
-            className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
+            className={`p-2 ${getHoverBg()} rounded-md transition-colors cursor-pointer`}
             aria-label="Show preview"
             title="Show preview"
           >
-            <PanelLeftOpen className="w-5 h-5 text-[#5B6B83]" />
+            <PanelLeftOpen className={`w-5 h-5 ${getMutedText()}`} />
           </button>
         )}
         <div className="flex items-center gap-2 flex-1">
@@ -136,11 +224,11 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
                 onChange={(e) => setEditedTitle(e.target.value)}
                 onKeyDown={handleTitleKeyDown}
                 onBlur={handleSaveTitle}
-                className="text-2xl font-semibold text-[#E0E0E0] bg-transparent border-b-2 border-[#61AFEF] focus:outline-none flex-1"
+                className={`text-2xl font-semibold ${getTextColor()} bg-transparent border-b-2 border-[#61AFEF] focus:outline-none flex-1`}
               />
               <button
                 onClick={handleSaveTitle}
-                className="p-1 hover:bg-[#3E4451] rounded transition-colors cursor-pointer"
+                className={`p-1 ${getHoverBg()} rounded transition-colors cursor-pointer`}
                 aria-label="Save title"
                 title="Save title"
               >
@@ -148,7 +236,7 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
               </button>
               <button
                 onClick={handleCancelEdit}
-                className="p-1 hover:bg-[#3E4451] rounded transition-colors cursor-pointer"
+                className={`p-1 ${getHoverBg()} rounded transition-colors cursor-pointer`}
                 aria-label="Cancel edit"
                 title="Cancel edit"
               >
@@ -157,17 +245,17 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-semibold text-[#E0E0E0]">
+              <h1 className={`text-2xl font-semibold ${getTextColor()}`}>
                 {displayTitle}
               </h1>
               {isEditable && onCourseTitleChange && (
                 <button
                   onClick={handleEditTitle}
-                  className="p-1 hover:bg-[#3E4451] rounded transition-colors cursor-pointer"
+                  className={`p-1 ${getHoverBg()} rounded transition-colors cursor-pointer`}
                   aria-label="Edit course title"
                   title="Edit course title"
                 >
-                  <Pencil className="w-4 h-4 text-[#5B6B83]" />
+                  <Pencil className={`w-4 h-4 ${getMutedText()}`} />
                 </button>
               )}
             </>
@@ -177,20 +265,20 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
           {!isSwapped && isPreviewHidden && onShowPreview && (
             <button
               onClick={onShowPreview}
-              className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
+              className={`p-2 ${getHoverBg()} rounded-md transition-colors cursor-pointer`}
               aria-label="Show preview"
               title="Show preview"
             >
-              <PanelRightOpen className="w-5 h-5 text-[#5B6B83]" />
+              <PanelRightOpen className={`w-5 h-5 ${getMutedText()}`} />
             </button>
           )}
           {!isSwapped && onSwapPanels && !isPreviewHidden && (
             <button
               onClick={onSwapPanels}
-              className="p-2 hover:bg-[#3E4451] rounded-md transition-colors cursor-pointer"
+              className={`p-2 ${getHoverBg()} rounded-md transition-colors cursor-pointer`}
               aria-label="Swap panels"
             >
-              <ArrowLeftRight className="w-5 h-5 text-[#5B6B83]" />
+              <ArrowLeftRight className={`w-5 h-5 ${getMutedText()}`} />
             </button>
           )}
         </div>
@@ -201,8 +289,8 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-2">
-              <Bot className="w-12 h-12 mx-auto text-[#5C6370] mb-4" />
-              <p className="text-[#5C6370] text-lg">
+              <Bot className={`w-12 h-12 mx-auto ${getMutedText()} mb-4`} />
+              <p className={`${getMutedText()} text-lg`}>
                 Start a conversation to plan your course
               </p>
             </div>
@@ -217,16 +305,21 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
               >
                 <div className="max-w-[85%]">
                   <div
-                    className={`rounded-lg px-4 py-3 ${message.role === "user"
-                      ? "bg-[#33365D] text-[#E0E0E0] border border-[#444985] shadow-[0_4px_8px_rgba(139,92,246,0.15)]"
-                      : "bg-[#1D2434] text-[#E0E0E0] border border-[#252C3C]"
-                      }`}
+                    className={`rounded-lg px-4 py-3 border ${
+                      message.role === "user"
+                        ? theme === "light"
+                          ? "bg-blue-100 text-gray-800 border-blue-200 shadow-[0_4px_8px_rgba(59,130,246,0.15)]"
+                          : "bg-[#33365D] text-[#E0E0E0] border-[#444985] shadow-[0_4px_8px_rgba(139,92,246,0.15)]"
+                        : theme === "light"
+                        ? "bg-gray-100 text-gray-800 border-gray-200"
+                        : "bg-[#1D2434] text-[#E0E0E0] border-[#252C3C]"
+                    }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-[#E0E0E0] uppercase">
+                      <span className={`text-xs font-bold ${theme === "light" ? "text-gray-800" : "text-[#E0E0E0]"} uppercase`}>
                         {message.role === "user" ? "YOU" : "ASSISTANT"}
                       </span>
-                      <span className="text-xs font-bold text-[#E0E0E0]">
+                      <span className={`text-xs font-bold ${theme === "light" ? "text-gray-800" : "text-[#E0E0E0]"}`}>
                         {formatTime(message.timestamp)}
                       </span>
                     </div>
@@ -240,19 +333,19 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
             {isLoading && (
               <div className="flex flex-col gap-2 items-start">
                 <div className="max-w-[85%]">
-                  <div className="bg-[#1D2434] text-[#E0E0E0] border border-[#252C3C] rounded-lg px-4 py-3">
+                  <div className={`${theme === "light" ? "bg-gray-100 text-gray-800 border-gray-200" : "bg-[#1D2434] text-[#E0E0E0] border-[#252C3C]"} border rounded-lg px-4 py-3`}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-[#E0E0E0] uppercase">
+                      <span className={`text-xs font-bold ${theme === "light" ? "text-gray-800" : "text-[#E0E0E0]"} uppercase`}>
                         ASSISTANT
                       </span>
-                      <span className="text-xs font-bold text-[#E0E0E0]">
+                      <span className={`text-xs font-bold ${theme === "light" ? "text-gray-800" : "text-[#E0E0E0]"}`}>
                         {formatTime(new Date())}
                       </span>
                     </div>
                     <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-[#ABB2BF] rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                      <span className="w-2 h-2 bg-[#ABB2BF] rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                      <span className="w-2 h-2 bg-[#ABB2BF] rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                      <span className={`w-2 h-2 ${theme === "light" ? "bg-gray-500" : "bg-[#ABB2BF]"} rounded-full animate-bounce`} style={{ animationDelay: "0ms" }}></span>
+                      <span className={`w-2 h-2 ${theme === "light" ? "bg-gray-500" : "bg-[#ABB2BF]"} rounded-full animate-bounce`} style={{ animationDelay: "150ms" }}></span>
+                      <span className={`w-2 h-2 ${theme === "light" ? "bg-gray-500" : "bg-[#ABB2BF]"} rounded-full animate-bounce`} style={{ animationDelay: "300ms" }}></span>
                     </div>
                   </div>
                 </div>
@@ -264,7 +357,7 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
       </div>
 
       {/* Input Box */}
-      <div className="border-t border-[#3E4451] bg-[#1E2025] p-4">
+      <div className={`border-t ${getBorderColor()} ${getInputAreaBg()} p-4`}>
         <form onSubmit={handleSubmit} className="flex gap-4 items-center justify-center">
           <input
             ref={fileInputRef}
@@ -278,10 +371,10 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
             <button
               type="button"
               onClick={handlePaperclipClick}
-              className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-2 hover:bg-[#3E4451]/50 rounded-md transition-colors z-10 cursor-pointer"
+              className={`absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-2 ${theme === "light" ? "hover:bg-gray-200" : "hover:bg-[#3E4451]/50"} rounded-md transition-colors z-10 cursor-pointer`}
               aria-label="Upload PDF file"
             >
-              <Paperclip className="w-5 h-5 text-[#ABB2BF]" />
+              <Paperclip className={`w-5 h-5 ${getMutedText()}`} />
             </button>
             <textarea
               value={input}
@@ -289,13 +382,13 @@ export function ChatSection({ messages, onSendMessage, isLoading, onSwapPanels, 
               placeholder="Ask for a new module, change tone, or request more detail..."
               disabled={isLoading}
               rows={1}
-              className="w-full rounded-xl border border-[#3E4451] bg-[#505050] pl-14 pr-5 py-4 text-sm text-white placeholder:text-[#B0B0B0] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              className={`w-full rounded-xl border ${getInputBorder()} ${getInputBg()} pl-14 pr-5 py-4 text-sm ${getInputText()} ${getInputPlaceholder()} focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none`}
             />
           </div>
           <Button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="px-4 bg-[#E0E0E0] text-[#282C34] hover:bg-[#C0C0C0]"
+            className={`px-4 ${theme === "light" ? "bg-gray-800 text-white hover:bg-gray-700" : "bg-[#E0E0E0] text-[#282C34] hover:bg-[#C0C0C0]"}`}
           >
             <span className="sr-only">Send</span>
             <Send className="w-4 h-4" />

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import type { ChangeEvent, DragEvent } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import "@/App.css"
@@ -13,6 +13,88 @@ export function UploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  
+  // Theme state
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+    return savedTheme || "dark"
+  })
+
+  // Apply theme on mount and when theme changes
+  useEffect(() => {
+    // Remove all theme classes first
+    document.documentElement.classList.remove("dark", "theme-light")
+    
+    if (theme === "system") {
+      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+      document.documentElement.classList.toggle("dark", systemPrefersDark)
+
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      const handleChange = (e: MediaQueryListEvent) => {
+        document.documentElement.classList.remove("theme-light")
+        document.documentElement.classList.toggle("dark", e.matches)
+      }
+      mediaQuery.addEventListener("change", handleChange)
+      return () => mediaQuery.removeEventListener("change", handleChange)
+    } else if (theme === "light") {
+      document.documentElement.classList.add("theme-light")
+    } else {
+      document.documentElement.classList.add("dark")
+    }
+  }, [theme])
+
+  // Listen for theme changes from other pages
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
+    }
+    window.addEventListener("storage", handleStorageChange)
+    // Also check periodically in case of same-tab updates
+    const interval = setInterval(() => {
+      const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "system" | null
+      if (savedTheme && savedTheme !== theme) {
+        setTheme(savedTheme)
+      }
+    }, 100)
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [theme])
+
+  // Theme-aware color helpers
+  const getBgColor = () => {
+    if (theme === "light") return "bg-white"
+    return "bg-[#21252B]"
+  }
+
+  const getTextColor = () => {
+    if (theme === "light") return "text-gray-800"
+    return "text-[#E0E0E0]"
+  }
+
+  const getBorderColor = () => {
+    if (theme === "light") return "border-gray-200"
+    return "border-[#3E4451]"
+  }
+
+  const getCardBg = () => {
+    if (theme === "light") return "bg-gray-50"
+    return "bg-[#1E2025]"
+  }
+
+  const getMutedText = () => {
+    if (theme === "light") return "text-gray-600"
+    return "text-[#9DA5B4]"
+  }
+
+  const getDragAreaBg = () => {
+    if (theme === "light") return "bg-blue-50"
+    return "bg-[#2C313C]"
+  }
 
   const validateFiles = (files: File[], currentFileCount: number) => {
     const validFiles: File[] = []
@@ -118,21 +200,25 @@ export function UploadPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#21252B] overflow-hidden text-[#E0E0E0]">
+    <div className={`flex h-screen ${getBgColor()} overflow-hidden ${getTextColor()}`}>
       <Sidebar currentStep={1} onStepSelect={(step) => step === 1 && id && navigate(`/${id}/outline`)} />
 
       <main className="flex-1 flex flex-col items-center justify-center p-10 overflow-auto">
         <div className="w-full max-w-2xl">
           <header className="mb-8">
-            <h1 className="text-3xl font-semibold mb-3">Upload your course materials</h1>
-            <p className="text-sm text-[#9DA5B4]">
+            <h1 className={`text-3xl font-semibold mb-3 ${getTextColor()}`}>Upload your course materials</h1>
+            <p className={`text-sm ${getMutedText()}`}>
               Upload up to {MAX_FILES} PDF files to kick-start outline generation. Your documents remain private and are only used for this session.
             </p>
           </header>
 
           <section
-            className={`border-2 border-dashed rounded-2xl bg-[#1E2025] transition-colors duration-200 ${
-              isDragging ? "border-[#61AFEF] bg-[#2C313C]" : "border-[#3E4451]"
+            className={`border-2 border-dashed rounded-2xl ${getCardBg()} transition-colors duration-200 ${
+              isDragging 
+                ? `border-[#61AFEF] ${getDragAreaBg()}` 
+                : theme === "light" 
+                  ? "border-gray-300" 
+                  : "border-[#3E4451]"
             } ${selectedFiles.length >= MAX_FILES ? "opacity-50 cursor-not-allowed" : ""}`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -140,8 +226,8 @@ export function UploadPage() {
           >
             <div className="flex flex-col items-center text-center gap-4 px-10 py-14">
               <div className="flex flex-col gap-1">
-                <span className="text-lg font-medium">Drag &amp; drop your PDF files here</span>
-                <span className="text-sm text-[#9DA5B4]">
+                <span className={`text-lg font-medium ${getTextColor()}`}>Drag &amp; drop your PDF files here</span>
+                <span className={`text-sm ${getMutedText()}`}>
                   Only PDF files are supported at the moment
                   {selectedFiles.length > 0 && ` (${selectedFiles.length}/${MAX_FILES} files selected)`}
                 </span>
@@ -151,7 +237,9 @@ export function UploadPage() {
                 type="button"
                 onClick={handleBrowseClick}
                 disabled={selectedFiles.length >= MAX_FILES}
-                className="px-6 py-2 rounded-md bg-[#61AFEF] text-[#1E2025] font-medium hover:bg-[#82C6FF] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`px-6 py-2 rounded-md bg-[#61AFEF] font-medium hover:bg-[#82C6FF] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  theme === "light" ? "text-white" : "text-[#1E2025]"
+                }`}
               >
                 Browse files
               </button>
@@ -172,16 +260,16 @@ export function UploadPage() {
               {selectedFiles.map((file, index) => (
                 <div
                   key={`${file.name}-${index}`}
-                  className="flex items-center justify-between bg-[#1E2025] border border-[#3E4451] rounded-xl px-5 py-4"
+                  className={`flex items-center justify-between ${getCardBg()} border ${getBorderColor()} rounded-xl px-5 py-4`}
                 >
                   <div className="flex flex-col text-left flex-1 min-w-0">
-                    <span className="text-sm font-medium truncate">{file.name}</span>
-                    <span className="text-xs text-[#9DA5B4]">{formatFileSize(file.size)}</span>
+                    <span className={`text-sm font-medium truncate ${getTextColor()}`}>{file.name}</span>
+                    <span className={`text-xs ${getMutedText()}`}>{formatFileSize(file.size)}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveFile(index)}
-                    className="text-sm text-[#FF6B6B] hover:text-[#FF8A8A] transition-colors ml-4 flex-shrink-0"
+                    className="text-sm text-red-600 hover:text-red-700 dark:text-[#FF6B6B] dark:hover:text-[#FF8A8A] transition-colors ml-4 flex-shrink-0"
                   >
                     Remove
                   </button>
@@ -191,7 +279,11 @@ export function UploadPage() {
           )}
 
           {error && (
-            <div className="mt-6 rounded-xl border border-[#FF6B6B] bg-[#2B1F23] px-5 py-3 text-sm text-[#FF8A8A]">
+            <div className={`mt-6 rounded-xl border ${
+              theme === "light" 
+                ? "border-red-300 bg-red-50 text-red-800" 
+                : "border-[#FF6B6B] bg-[#2B1F23] text-[#FF8A8A]"
+            } px-5 py-3 text-sm`}>
               {error}
             </div>
           )}
