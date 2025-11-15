@@ -161,11 +161,16 @@ export function HomePage() {
         </div>
       </section>
 
-      <section ref={aboutSectionRef} className="relative bg-gradient-to-b from-black via-slate-900 to-black px-6 py-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent)]" />
-        <div className="relative mx-auto max-w-4xl space-y-6 text-center text-white/80">
+      <section ref={aboutSectionRef} className="relative bg-gradient-to-r from-[#03060B] via-[#091324] to-[#03060B] px-6 py-20 overflow-hidden">
+        {/* Pink purple glow - top right */}
+        <div className="absolute -top-3/4 right-[-10rem] w-[36rem] h-[36rem] bg-fuchsia-400/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "0s", animationDuration: "4s" }} />
+        {/* Dark blue glow - middle left */}
+        <div className="absolute top-1/3 left-[-5rem] -translate-y-1/2 w-[36rem] h-[36rem] bg-blue-900/40 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s", animationDuration: "3s" }} />
+        {/* Powder blue glow - bottom middle */}
+        <div className="absolute -bottom-2/3 left-3/5 -translate-x-1/2 w-[30rem] h-[30rem] bg-sky-700/40 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "2s", animationDuration: "5s" }} />
+        <div className="relative mx-auto max-w-4xl space-y-6 text-center text-white/80 z-10">
           <h2
-            className={`bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-3xl font-semibold text-transparent transition-all duration-700 ${aboutVisible ? "opacity-100" : "opacity-0"
+            className={`bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-3xl font-semibold text-transparent transition-all duration-700 ${aboutVisible ? "opacity-100" : "opacity-0"
               }`}
           >
             Who We Are
