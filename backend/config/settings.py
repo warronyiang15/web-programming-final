@@ -2,8 +2,7 @@ from functools import lru_cache
 from typing import Any
 
 from pydantic import Field, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict 
-
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
 
@@ -13,12 +12,12 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = Field(..., description="Service name")
-    app_version: str = Field(..., description="Service semantic version")
-    api_prefix: str = Field(..., description="Base prefix for all API routes")
-    host: str | None = Field(default=None, description="Host interface for the ASGI server")
-    port: int | None = Field(default=None, description="Port for the ASGI server")
-    reload: bool | None = Field(default=None, description="Enable auto-reload in development")
+    app_name: str = Field(default="Backend Service", description="Service name")
+    app_version: str = Field(default="0.1.0", description="Service semantic version")
+    api_prefix: str = Field(default="/api/v1", description="Base prefix for all API routes")
+    host: str | None = Field(default="0.0.0.0", description="Host interface for the ASGI server")
+    port: int | None = Field(default=8080, description="Port for the ASGI server")
+    reload: bool | None = Field(default=False, description="Enable auto-reload in development")
 
     @model_validator(mode="before")
     @classmethod
