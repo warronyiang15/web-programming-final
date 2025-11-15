@@ -125,17 +125,17 @@
   },
   "upload": {
     "title": "上傳您的課程材料",
-    "description": "上傳最多 {maxFiles} 個 PDF 檔案以開始生成大綱。您的文件將保持私密，僅用於此工作階段。",
+    "description": "上傳最多 {{maxFiles}} 個 PDF 檔案以開始生成大綱。您的文件將保持私密，僅用於此工作階段。",
     "dragDrop": "將您的 PDF 檔案拖放到此處",
     "onlyPdfSupported": "目前僅支援 PDF 檔案",
-    "filesSelected": "（已選擇 {count}/{maxFiles} 個檔案）",
+    "filesSelected": "（已選擇 {{count}}/{{maxFiles}} 個檔案）",
     "browseFiles": "瀏覽檔案",
     "remove": "移除",
     "errors": {
       "onlyPdf": "請僅上傳 PDF 檔案。",
       "uploadPdf": "請上傳 PDF 檔案。",
-      "maxFilesExceeded": "您最多只能上傳 {maxFiles} 個檔案。只會新增前 {allowedCount} 個檔案。",
-      "maxFilesReached": "您最多只能上傳 {maxFiles} 個檔案。請先移除一些檔案。"
+      "maxFilesExceeded": "您最多只能上傳 {{maxFiles}} 個檔案。只會新增前 {{allowedCount}} 個檔案。",
+      "maxFilesReached": "您最多只能上傳 {{maxFiles}} 個檔案。請先移除一些檔案。"
     }
   },
   "sidebar": {
