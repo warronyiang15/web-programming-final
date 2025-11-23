@@ -1,8 +1,9 @@
 from functools import lru_cache
 from typing import Any
 
-from pydantic import Field, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import AliasChoices, Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore[import-untyped]
+
 
 class Settings(BaseSettings):
 
@@ -18,6 +19,25 @@ class Settings(BaseSettings):
     host: str | None = Field(default="0.0.0.0", description="Host interface for the ASGI server")
     port: int | None = Field(default=8080, description="Port for the ASGI server")
     reload: bool | None = Field(default=False, description="Enable auto-reload in development")
+    firebase_project_id: str | None = Field(
+        default=None,
+        description="Explicit Firestore project id. Defaults to credentials project.",
+        validation_alias=AliasChoices("FIREBASE_PROJECT_ID", "GOOGLE_CLOUD_PROJECT"),
+    )
+    firebase_credentials_file: str | None = Field(
+        default=None,
+        description="Path to a service-account JSON for Firestore access.",
+        validation_alias=AliasChoices("FIREBASE_CREDENTIALS_FILE", "GOOGLE_APPLICATION_CREDENTIALS"),
+    )
+    firestore_health_collection: str = Field(
+        default="health_checks",
+        description="Collection used for Firestore connectivity checks.",
+    )
+    llm_api_key: str = Field(
+        default="dev-dummy-key",
+        description="Secret key for authenticating LLM callbacks.",
+        validation_alias=AliasChoices("LLM_API_KEY"),
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -31,6 +51,7 @@ class Settings(BaseSettings):
                 "host": ("APP_HOST", "HOST"),
                 "port": ("APP_PORT", "PORT"),
                 "reload": ("APP_RELOAD", "RELOAD"),
+                "firestore_health_collection": ("FIRESTORE_HEALTH_COLLECTION",),
             }
             for field, aliases in alias_map.items():
                 if field in data and data[field] is not None:
@@ -46,4 +67,3 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
 
     return Settings()
-
