@@ -34,11 +34,21 @@ class CourseService:
                 
             destination_blob_name = f"{course.id}/{file.filename}"
             
-            await self._storage_repository.upload_file(
-                destination_blob_name=destination_blob_name,
-                file_obj=file.file,
-                content_type=file.content_type or "application/pdf",
-            )
+            try:
+                # Read file content asynchronously to avoid blocking and potential stream issues
+                content = await file.read()
+                
+                await self._storage_repository.upload_file_bytes(
+                    destination_blob_name=destination_blob_name,
+                    content=content,
+                    content_type=file.content_type or "application/pdf",
+                )
+            except Exception as exc:
+                print(f"Failed to upload {file.filename}: {exc}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to upload file {file.filename} to storage.",
+                ) from exc
             
         return course
 

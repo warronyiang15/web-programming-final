@@ -30,3 +30,15 @@ class StorageRepository:
             return f"gs://{self._bucket_name}/{destination_blob_name}"
 
         return await asyncio.to_thread(_sync_upload)
+
+    async def upload_file_bytes(self, destination_blob_name: str, content: bytes, content_type: str) -> str:
+        
+        def _sync_upload_bytes() -> str:
+            bucket = self._client.bucket(self._bucket_name)
+            blob = bucket.blob(destination_blob_name)
+            
+            blob.upload_from_string(content, content_type=content_type)
+            
+            return f"gs://{self._bucket_name}/{destination_blob_name}"
+
+        return await asyncio.to_thread(_sync_upload_bytes)
