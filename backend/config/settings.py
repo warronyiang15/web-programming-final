@@ -38,6 +38,51 @@ class Settings(BaseSettings):
         description="Secret key for authenticating LLM callbacks.",
         validation_alias=AliasChoices("LLM_API_KEY"),
     )
+    auth_secret_key: str = Field(
+        default="super-secret-dev-key",
+        description="Session middleware secret key.",
+        validation_alias=AliasChoices("AUTH_SECRET_KEY"),
+    )
+    google_client_id: str | None = Field(
+        default=None,
+        description="Google OAuth Client ID.",
+        validation_alias=AliasChoices("GOOGLE_CLIENT_ID"),
+    )
+    google_client_secret: str | None = Field(
+        default=None,
+        description="Google OAuth Client Secret.",
+        validation_alias=AliasChoices("GOOGLE_CLIENT_SECRET"),
+    )
+    github_client_id: str | None = Field(
+        default=None,
+        description="GitHub OAuth Client ID.",
+        validation_alias=AliasChoices("GITHUB_CLIENT_ID"),
+    )
+    github_client_secret: str | None = Field(
+        default=None,
+        description="GitHub OAuth Client Secret.",
+        validation_alias=AliasChoices("GITHUB_CLIENT_SECRET"),
+    )
+    google_server_metadata_url: str | None = Field(
+        default="https://accounts.google.com/.well-known/openid-configuration",
+        description="Google OAuth Server Metadata URL.",
+        validation_alias=AliasChoices("GOOGLE_SERVER_METADATA_URL"),
+    )
+    github_access_token_url: str | None = Field(
+        default="https://github.com/login/oauth/access_token",
+        description="Github Access Token URL.",
+        validation_alias=AliasChoices("GITHUB_ACCESS_TOKEN_URL"),
+    )
+    github_authorize_url: str | None = Field(
+        default="https://github.com/login/oauth/authorize",
+        description="Github Authorize URL.",
+        validation_alias=AliasChoices("GITHUB_AUTHORIZE_URL"),
+    )
+    github_api_base_url: str | None = Field(
+        default="https://api.github.com/",
+        description="Github API Base URL.",
+        validation_alias=AliasChoices("GITHUB_API_BASE_URL"),
+    )
 
     @model_validator(mode="before")
     @classmethod

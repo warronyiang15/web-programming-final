@@ -1,5 +1,3 @@
-from .responses.firestore import FirestoreHealthResponse
-from .responses.health import HealthStatusResponse
+from .user import UserProfile
 
-__all__ = ["FirestoreHealthResponse", "HealthStatusResponse"]
-
+__all__ = ["UserProfile"]
