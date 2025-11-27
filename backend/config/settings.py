@@ -33,6 +33,11 @@ class Settings(BaseSettings):
         default="health_checks",
         description="Collection used for Firestore connectivity checks.",
     )
+    gcs_bucket_name: str | None = Field(
+        default=None,
+        description="Google Cloud Storage bucket name for file uploads.",
+        validation_alias=AliasChoices("GCS_BUCKET_NAME", "GOOGLE_CLOUD_STORAGE_BUCKET"),
+    )
     llm_api_key: str = Field(
         default="dev-dummy-key",
         description="Secret key for authenticating LLM callbacks.",
