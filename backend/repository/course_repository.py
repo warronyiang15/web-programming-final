@@ -6,7 +6,7 @@ from typing import Any
 
 from google.cloud import firestore
 
-from models.course import CourseModel
+from models.course import CourseModel, Phase
 
 
 class CourseRepository:
@@ -28,6 +28,7 @@ class CourseRepository:
                 "name": name,
                 "created_at": now,
                 "updated_at": now,
+                "phase": Phase.MARKDOWN
             }
             
             doc_ref.set(new_course_data)

@@ -12,7 +12,8 @@ class CourseResponse(BaseModel):
                     "name": "Web Programming",
                     "owner_id": "user-123",
                     "created_at": "2025-01-01T00:00:00.000000+00:00",
-                    "updated_at": "2025-01-01T00:00:00.000000+00:00"
+                    "updated_at": "2025-01-01T00:00:00.000000+00:00",
+                    "phase": "markdown"
                 }
             }
         }
@@ -32,14 +33,16 @@ class MultipleCourseResponse(BaseModel):
                         "name": "Web Programming",
                         "owner_id": "user-123",
                         "created_at": "2025-01-01T00:00:00.000000+00:00",
-                        "updated_at": "2025-01-01T00:00:00.000000+00:00"
+                        "updated_at": "2025-01-01T00:00:00.000000+00:00",
+                        "phase": "markdown"
                     },
                     {
                         "id": "course-456",
                         "name": "Data Structures",
                         "owner_id": "user-123",
                         "created_at": "2025-01-01T00:00:00.000000+00:00",
-                        "updated_at": "2025-01-01T00:00:00.000000+00:00"
+                        "updated_at": "2025-01-01T00:00:00.000000+00:00",
+                        "phase": "website"
                     }
                 ]
             }
