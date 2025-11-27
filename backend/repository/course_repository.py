@@ -35,3 +35,15 @@ class CourseRepository:
 
         return await asyncio.to_thread(_sync_create_course)
 
+    async def get_all_courses_by_userId(self, user_id: str) -> list[CourseModel]:
+        
+        def _sync_get_all_courses_by_userId() -> list[CourseModel]:
+            courses_ref = self._client.collection(self._collection)
+
+            query = courses_ref.where("owner_id", "==", user_id)
+
+            docs = list(query.stream())
+
+            return [CourseModel(**doc.to_dict()) for doc in docs]
+
+        return await asyncio.to_thread(_sync_get_all_courses_by_userId)

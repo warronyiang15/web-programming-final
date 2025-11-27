@@ -41,3 +41,7 @@ class CourseService:
             )
             
         return course
+
+    async def get_all_courses(self, user: UserModel) -> list[CourseModel]:
+        # return all the courses for the user
+        return await self._repository.get_all_courses_by_userId(user.id)

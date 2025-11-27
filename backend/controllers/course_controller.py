@@ -6,7 +6,7 @@ from config.settings import Settings, get_settings
 from core.database import get_firestore_client
 from core.storage import get_storage_client
 from decorators.auth import required_login
-from models.responses.course import CourseResponse
+from models.responses.course import CourseResponse, MultipleCourseResponse
 from models.responses.error import ErrorResponse
 from models.user import UserModel
 from repository.course_repository import CourseRepository
@@ -82,3 +82,27 @@ async def create_course(
     
     course = await service.create_course(user, course_name, files)
     return CourseResponse(status="success", course=course)
+
+@router.get(
+    "",
+    summary="Get all courses",
+    response_model=MultipleCourseResponse,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "User not authenticated",
+        }
+    }
+)
+@required_login
+async def get_all_courses(
+    request: Request,
+    service: CourseService = Depends(get_course_service),
+) -> MultipleCourseResponse:
+
+    user_dict = request.session["user"]
+    user = UserModel(**user_dict)
+
+    courses = await service.get_all_courses(user)
+
+    return MultipleCourseResponse(status="success", courses=courses)
