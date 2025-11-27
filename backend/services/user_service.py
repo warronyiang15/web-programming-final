@@ -2,7 +2,7 @@ from authlib.integrations.starlette_client import OAuth  # type: ignore[import-u
 from starlette.config import Config
 
 from config.settings import Settings
-from models.user import UserModel, UserProfile
+from models.user import UserModel, UserPreference, UserProfile
 from repository.user_repository import UserRepository
 
 
@@ -42,3 +42,6 @@ class UserService:
 
     async def get_user(self, user_profile: UserProfile) -> UserProfile:
         return await self._repository.get_or_create_user(user_profile)
+
+    async def update_user_preference(self, user_id: str, new_preference: UserPreference) -> None:
+        return await self._repository.update_user_preference(user_id, new_preference)

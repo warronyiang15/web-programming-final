@@ -1,14 +1,16 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from config.settings import Settings, get_settings
 from core.database import get_firestore_client
-from models.user import UserModel, UserProfile
+from decorators.auth import required_login
+from models.requests.user import UserPreferenceRequest
+from models.responses.error import ErrorResponse
+from models.responses.user import UserResponse
+from models.user import UserPreference, UserProfile, UserResponseModel
 from repository.user_repository import UserRepository
 from services.user_service import UserService
-
-from datetime import datetime
 
 router = APIRouter(prefix="/user", tags=["Users"])
 
@@ -58,7 +60,10 @@ async def _fetch_user_info(client: Any, provider: str, token: dict[str, Any]) ->
     )
 
 
-@router.get("/login/{provider}", summary="Initiate OAuth login")
+@router.get(
+    "/login/{provider}", 
+    summary="Initiate OAuth login"
+)
 async def login(
     request: Request,
     provider: str,
@@ -76,12 +81,17 @@ async def login(
     return await client.authorize_redirect(request, redirect_uri)
 
 
-@router.get("/callback/{provider}", name="auth_callback", summary="OAuth callback handler")
+@router.get(
+    "/callback/{provider}", 
+    name="auth_callback", 
+    summary="OAuth callback handler",
+    response_model=UserResponse,
+)
 async def auth_callback(
     request: Request,
     provider: str,
     service: UserService = Depends(get_user_service),
-) -> UserProfile:
+) -> UserResponse:
     
     client = service.oauth.create_client(provider)
     if not client:
@@ -106,4 +116,74 @@ async def auth_callback(
     # Store dict in session, return model to API
     request.session['user'] = user_model.model_dump(mode='json')
     
-    return user_model
+    # Convert to safe response model
+    safe_user = UserResponseModel(**user_model.model_dump())
+    
+    return UserResponse(status="success", user=safe_user)
+
+@router.put(
+    "/preference",
+    summary="Update user preference",
+    response_model=UserResponse,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "User not authenticated",
+        }
+    },
+)
+@required_login
+async def update_preference(
+    request: Request,
+    payload: UserPreferenceRequest,
+    service: UserService = Depends(get_user_service),
+) -> UserResponse:
+    
+    user = request.session["user"]
+    
+    new_preference = UserPreference(
+        theme=payload.theme,
+        language=payload.language,
+    )
+    
+    await service.update_user_preference(user["id"], new_preference)
+    
+    # Update session with new preferences to keep state consistent
+    user["preferences"] = new_preference.model_dump()
+    request.session["user"] = user
+    
+    # Convert to safe response model
+    safe_user = UserResponseModel(**user)
+    
+    return UserResponse(status="success", user=safe_user)
+
+@router.get(
+    "/",
+    summary="Get current user information",
+    response_model=UserResponse,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "User not authenticated",
+        }
+    },
+)
+@required_login
+async def get_current_user(
+    request: Request,
+) -> UserResponse:
+    user = request.session["user"]
+    safe_user = UserResponseModel(**user)
+    return UserResponse(status="success", user=safe_user)
+
+@router.post(
+    '/logout',
+    summary="Logout current user",
+    response_model=None,
+)
+async def logout(
+    request: Request,
+) -> Response:
+    request.session.pop("user", None)
+    request.session.clear()
+    return Response(status_code=status.HTTP_200_OK)

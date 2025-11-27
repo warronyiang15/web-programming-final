@@ -6,7 +6,7 @@ from typing import Any
 
 from google.cloud import firestore
 
-from models.user import UserModel, UserProfile
+from models.user import UserModel, UserPreference, UserProfile
 
 
 class UserRepository:
@@ -40,6 +40,9 @@ class UserRepository:
             # Create new user
             new_doc_ref = users_ref.document()
             
+            # Explicitly dump preferences to dict for storage
+            preferences = UserPreference().model_dump()
+            
             new_user_data = {
                 "id": new_doc_ref.id,
                 "provider": profile.provider,
@@ -47,6 +50,7 @@ class UserRepository:
                 "email": profile.email or "",
                 "name": profile.name,
                 "picture": profile.picture,
+                "preferences": preferences,
                 "created_at": now,
                 "updated_at": now,
             }
@@ -55,3 +59,20 @@ class UserRepository:
             return UserModel(**new_user_data)
 
         return await asyncio.to_thread(_sync_get_or_create)
+
+    async def update_user_preference(self, user_id: str, new_preference: UserPreference) -> None:
+        def _sync_update_user_preference() -> None:
+            users_ref = self._client.collection(self._collection)
+
+            doc = users_ref.document(user_id).get()
+            if not doc.exists:
+                raise ValueError(f"User with ID {user_id} not found")
+            
+            data = doc.to_dict()
+            data["preferences"] = new_preference.model_dump()
+            data["updated_at"] = datetime.now(timezone.utc)
+
+            doc.reference.update(data)
+            return None
+            
+        return await asyncio.to_thread(_sync_update_user_preference)

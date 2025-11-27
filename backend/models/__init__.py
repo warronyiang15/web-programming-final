@@ -1,3 +1,3 @@
-from .user import UserProfile
+from .user import UserModel, UserPreference, UserProfile, UserResponseModel
 
-__all__ = ["UserProfile"]
+__all__ = ["UserModel", "UserPreference", "UserProfile", "UserResponseModel"]
