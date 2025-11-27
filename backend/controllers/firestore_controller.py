@@ -3,6 +3,7 @@ from google.auth.exceptions import DefaultCredentialsError
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from config.settings import Settings, get_settings
+from core.database import get_firestore_client
 from models.responses.firestore import FirestoreHealthResponse
 from repository.firestore_repository import FirestoreRepository
 from services.firestore_service import FirestoreService
@@ -14,10 +15,12 @@ def get_firestore_repository(
     settings: Settings = Depends(get_settings),
 ) -> FirestoreRepository:
     try:
-        return FirestoreRepository(
+        # Get the singleton client using the core database provider
+        client = get_firestore_client(
             project_id=settings.firebase_project_id,
             credentials_file=settings.firebase_credentials_file,
         )
+        return FirestoreRepository(client=client)
     except (DefaultCredentialsError, FileNotFoundError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -55,4 +58,3 @@ async def firestore_health_check(
         ) from exc
 
     return FirestoreHealthResponse(**payload)
-
