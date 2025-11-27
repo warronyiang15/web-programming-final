@@ -2,11 +2,14 @@ from authlib.integrations.starlette_client import OAuth  # type: ignore[import-u
 from starlette.config import Config
 
 from config.settings import Settings
+from models.user import UserModel, UserProfile
+from repository.user_repository import UserRepository
 
 
 class UserService:
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, repository: UserRepository) -> None:
+        self._repository = repository
         self._oauth = OAuth(Config(environ={}))
         self._register_providers(settings)
 
@@ -36,3 +39,6 @@ class UserService:
     @property
     def oauth(self) -> OAuth:
         return self._oauth
+
+    async def get_user(self, user_profile: UserProfile) -> UserProfile:
+        return await self._repository.get_or_create_user(user_profile)

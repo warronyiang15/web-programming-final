@@ -3,16 +3,30 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from config.settings import Settings, get_settings
-from models.user import UserProfile
+from core.database import get_firestore_client
+from models.user import UserModel, UserProfile
+from repository.user_repository import UserRepository
 from services.user_service import UserService
 
 from datetime import datetime
 
 router = APIRouter(prefix="/user", tags=["Users"])
 
+def get_user_repository(
+    settings: Settings = Depends(get_settings),
+) -> UserRepository:
+    client = get_firestore_client(
+        project_id=settings.firebase_project_id,
+        credentials_file=settings.firebase_credentials_file,
+    )
+    return UserRepository(client=client, collection="user")
 
-def get_user_service(settings: Settings = Depends(get_settings)) -> UserService:
-    return UserService(settings)
+
+def get_user_service(
+    settings: Settings = Depends(get_settings),
+    repository: UserRepository = Depends(get_user_repository),
+) -> UserService:
+    return UserService(settings, repository)
 
 
 async def _fetch_user_info(client: Any, provider: str, token: dict[str, Any]) -> UserProfile:
@@ -86,7 +100,10 @@ async def auth_callback(
 
     user_profile = await _fetch_user_info(client, provider, token)
     
-    # Convert Pydantic model to dict for session storage
-    request.session['user'] = user_profile.model_dump()
+    # Sync with database
+    user_model = await service.get_user(user_profile)
     
-    return user_profile
+    # Store dict in session, return model to API
+    request.session['user'] = user_model.model_dump(mode='json')
+    
+    return user_model
