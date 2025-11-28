@@ -48,3 +48,15 @@ class CourseRepository:
             return [CourseModel(**doc.to_dict()) for doc in docs]
 
         return await asyncio.to_thread(_sync_get_all_courses_by_userId)
+
+    async def get_course_by_id(self, course_id: str) -> CourseModel | None:
+        
+        def _sync_get_course_by_id() -> CourseModel | None:
+            doc_ref = self._client.collection(self._collection).document(course_id)
+            doc = doc_ref.get()
+            
+            if doc.exists:
+                return CourseModel(**doc.to_dict())
+            return None
+
+        return await asyncio.to_thread(_sync_get_course_by_id)

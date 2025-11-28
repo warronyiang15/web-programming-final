@@ -6,14 +6,17 @@ from config.settings import Settings, get_settings
 from core.database import get_firestore_client
 from core.storage import get_storage_client
 from decorators.auth import required_login
-from models.responses.course import CourseResponse, MultipleCourseResponse
+from models.requests.course import CreateMessageRequest
+from models.responses.course import CourseResponse, MultipleCourseResponse, CourseDetailResponse, MultipleMessageResponse, SingleMessageResponse
 from models.responses.error import ErrorResponse
 from models.user import UserModel
 from repository.course_repository import CourseRepository
+from repository.message_repository import MessageRepository
 from repository.storage_repository import StorageRepository
 from services.course_service import CourseService
 
 router = APIRouter(prefix="/course", tags=["Courses"])
+
 
 
 def get_course_repository(
@@ -42,11 +45,21 @@ def get_storage_repository(
     return StorageRepository(client=client, bucket_name=settings.gcs_bucket_name)
 
 
+def get_message_repository(
+    settings: Settings = Depends(get_settings),
+) -> MessageRepository:
+    client = get_firestore_client(
+        project_id=settings.firebase_project_id,
+        credentials_file=settings.firebase_credentials_file,
+    )
+    return MessageRepository(client=client, collection="message")
+
 def get_course_service(
     repository: CourseRepository = Depends(get_course_repository),
     storage_repository: StorageRepository = Depends(get_storage_repository),
+    message_repository: MessageRepository = Depends(get_message_repository),
 ) -> CourseService:
-    return CourseService(repository, storage_repository)
+    return CourseService(repository, storage_repository, message_repository)
 
 
 @router.post(
@@ -106,3 +119,108 @@ async def get_all_courses(
     courses = await service.get_all_courses(user)
 
     return MultipleCourseResponse(status="success", courses=courses)
+
+@router.get(
+    "/{course_id}",
+    summary="Get a course by ID",
+    response_model=CourseDetailResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": ErrorResponse,
+            "description": "Course not found",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": ErrorResponse,
+            "description": "User does not have permission to access this course",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "User not authenticated",
+        }
+    }
+)
+@required_login
+async def get_course_by_id(
+    request: Request,
+    course_id: str,
+    service: CourseService = Depends(get_course_service),
+) -> CourseDetailResponse:
+    
+    user_dict = request.session["user"]
+    user = UserModel(**user_dict)
+    
+    course = await service.get_course_by_id(course_id, user)
+    messages = await service.get_messages_by_course_id(course_id, user)
+    
+    return CourseDetailResponse(
+        status="success",
+        # course is guaranteed to be not None here because service raises 404 otherwise
+        course=course, # type: ignore
+        messages=messages
+    )
+
+@router.get(
+    "/{course_id}/message",
+    summary="Get all messages by course ID",
+    response_model=MultipleMessageResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": ErrorResponse,
+            "description": "Course not found",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": ErrorResponse,
+            "description": "User does not have permission to access this course",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "User not authenticated",
+        }
+    }
+)
+@required_login
+async def get_messages_by_course_id(
+    request: Request,
+    course_id: str,
+    service: CourseService = Depends(get_course_service),
+) -> MultipleMessageResponse:
+    
+    user_dict = request.session["user"]
+    user = UserModel(**user_dict)
+    
+    messages = await service.get_messages_by_course_id(course_id, user)
+    return MultipleMessageResponse(status="success", messages=messages)
+
+@router.post(
+    "/{course_id}/message",
+    summary="Create a new message by user",
+    response_model=SingleMessageResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": ErrorResponse,
+            "description": "Course not found",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": ErrorResponse,
+            "description": "User does not have permission to access this course",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "User not authenticated",
+        }
+    }
+)
+@required_login
+async def create_message_by_user(
+    request: Request,
+    course_id: str,
+    payload: CreateMessageRequest,
+    service: CourseService = Depends(get_course_service),
+) -> SingleMessageResponse:
+    
+    user_dict = request.session["user"]
+    user = UserModel(**user_dict)
+    
+    message = await service.create_message_by_user(course_id, user, payload.content)
+    
+    return SingleMessageResponse(status="success", message=message)
