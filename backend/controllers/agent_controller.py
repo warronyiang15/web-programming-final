@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 from config.settings import Settings, get_settings
 from core.storage import get_storage_client
 from decorators.auth import required_api_key
-from models.responses.agent import DirectoryListResponse, DirectoryTreeResponse
+from models.requests.agent import FileSystemCreateRequest, FileSystemRewriteRequest
+from models.responses.agent import DirectoryListResponse, DirectoryTreeResponse, FileSystemOpResponse
 from models.responses.error import ErrorResponse
 from repository.storage_repository import StorageRepository
 from services.agent_service import AgentService
@@ -122,3 +123,94 @@ async def list_directory_as_tree(
 ) -> DirectoryTreeResponse:
     tree_str = await service.list_directory_as_tree(path)
     return DirectoryTreeResponse(tree=tree_str)
+
+@router.post(
+    '/filesystem/create',
+    summary="Create a new file or directory",
+    response_model=FileSystemOpResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorResponse,
+            "description": "Invalid request parameters",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "X-LLM-API-Key is not valid or missing",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": ErrorResponse,
+            "description": "Server configuration error (e.g. missing GCS bucket)",
+        },
+    },
+)
+@required_api_key
+async def create_file_or_folder(
+    request: Request,
+    payload: FileSystemCreateRequest,
+    service: AgentService = Depends(get_agent_service),
+) -> FileSystemOpResponse:
+    await service.create_file_or_folder(payload.path)
+    return FileSystemOpResponse(
+        message=f"URI {payload.path} successfully created."
+    )
+
+@router.delete(
+    '/filesystem/delete',
+    summary="Delete a file or directory",
+    response_model=FileSystemOpResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorResponse,
+            "description": "Invalid request parameters",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "X-LLM-API-Key is not valid or missing",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": ErrorResponse,
+            "description": "Server configuration error (e.g. missing GCS bucket)",
+        },
+    },
+)
+@required_api_key
+async def delete_file_or_folder(
+    request: Request,
+    path: str = Query(..., description="Path to the file or directory to delete"),
+    recursive: Optional[bool] = Query(False, description="Recursively delete folder content (ignored, always force delete for folders)"),
+    service: AgentService = Depends(get_agent_service),
+) -> FileSystemOpResponse:
+    await service.delete_file_or_folder(path, recursive)
+    return FileSystemOpResponse(
+        message=f"URI {path} successfully deleted."
+    )
+
+@router.put(
+    '/files/content',
+    summary="Rewrite the content of a file",
+    response_model=FileSystemOpResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorResponse,
+            "description": "Invalid request parameters",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "X-LLM-API-Key is not valid or missing",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": ErrorResponse,
+            "description": "Server configuration error (e.g. missing GCS bucket)",
+        },
+    },
+)
+@required_api_key
+async def rewrite_file_content(
+    request: Request,
+    payload: FileSystemRewriteRequest,
+    service: AgentService = Depends(get_agent_service),
+) -> FileSystemOpResponse:
+    await service.rewrite_file(payload.path, payload.content)
+    return FileSystemOpResponse(
+        message=f"Change successfully made to {payload.path}."
+    )

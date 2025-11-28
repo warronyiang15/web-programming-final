@@ -149,3 +149,62 @@ class StorageRepository:
             return "\n".join(lines)
 
         return await asyncio.to_thread(_sync_list_directory_as_tree)
+
+    async def create_directory_file_from_storage(self, destination_blob_path: str) -> None:
+        
+        def _sync_create_directory_file() -> None:
+            bucket = self._client.bucket(self._bucket_name)
+
+            path = destination_blob_path.lstrip('/')
+
+            blob = bucket.blob(path)
+
+            blob.upload_from_string(b'', content_type='application/x-www-form-urlencoded;charset=UTF-8')
+
+        return await asyncio.to_thread(_sync_create_directory_file)
+
+    async def delete_directory_file_from_storage(self, destination_blob_path: str, recursive: bool = False) -> None:
+
+        def _sync_delete_directory_file() -> None:
+            bucket = self._client.bucket(self._bucket_name)
+            
+            # Remove leading slash
+            path = destination_blob_path.lstrip('/')
+            
+            if path.endswith('/'):
+                # It is a folder, delete all blobs with this prefix
+                blobs = list(bucket.list_blobs(prefix=path))
+                if blobs:
+                    bucket.delete_blobs(blobs)
+                # Also try to delete the "folder marker" object itself if it exists (it was included in list_blobs if it matches prefix)
+            else:
+                # It might be a file or a folder path without trailing slash.
+                # First try to delete as a single object (file)
+                blob = bucket.blob(path)
+                if blob.exists():
+                    blob.delete()
+                else:
+                    # If it doesn't exist as a file, check if it is a folder (prefix)
+                    # Appending '/' to treat as folder
+                    folder_prefix = path + '/'
+                    blobs = list(bucket.list_blobs(prefix=folder_prefix))
+                    if blobs:
+                         bucket.delete_blobs(blobs)
+
+        return await asyncio.to_thread(_sync_delete_directory_file)
+
+    async def rewrite_file_from_storage(self, destination_blob_path: str, content: str) -> None:
+
+        def _sync_rewrite_file() -> None:
+            bucket = self._client.bucket(self._bucket_name)
+
+            path = destination_blob_path.lstrip('/')
+
+            blob = bucket.blob(path)
+
+            blob.upload_from_string(content, content_type='application/octet-stream')
+
+        return await asyncio.to_thread(_sync_rewrite_file)
+    
+    
+
