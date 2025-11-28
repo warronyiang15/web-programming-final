@@ -3,6 +3,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from config.settings import get_settings
+from controllers.agent_controller import router as agent_router
 from controllers.course_controller import router as course_router
 from controllers.health_controller import router as health_router
 from controllers.llm import ingest_router as llm_ingest_router
@@ -28,7 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(llm_ingest_router, prefix=settings.api_prefix)
     app.include_router(user_router, prefix=settings.api_prefix)
     app.include_router(course_router, prefix=settings.api_prefix)
-
+    app.include_router(agent_router, prefix=settings.api_prefix)
     return app
 
 
