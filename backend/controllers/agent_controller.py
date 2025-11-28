@@ -1,11 +1,11 @@
-from typing import Any, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response, status
 
 from config.settings import Settings, get_settings
 from core.storage import get_storage_client
 from decorators.auth import required_api_key
-from models.requests.agent import FileSystemCreateRequest, FileSystemRewriteRequest
+from models.requests.agent import FileSystemCreateRequest, FileSystemEditRequest, FileSystemRewriteRequest
 from models.responses.agent import DirectoryListResponse, DirectoryTreeResponse, FileSystemOpResponse
 from models.responses.error import ErrorResponse
 from repository.storage_repository import StorageRepository
@@ -213,4 +213,38 @@ async def rewrite_file_content(
     await service.rewrite_file(payload.path, payload.content)
     return FileSystemOpResponse(
         message=f"Change successfully made to {payload.path}."
+    )
+
+@router.patch(
+    '/files/edit',
+    summary="Edit the contents of a file",
+    response_model=FileSystemOpResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorResponse,
+            "description": "Invalid request parameters or patch application failed",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "X-LLM-API-Key is not valid or missing",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "model": ErrorResponse,
+            "description": "File not found",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": ErrorResponse,
+            "description": "Server configuration error (e.g. missing GCS bucket)",
+        },
+    },
+)
+@required_api_key
+async def edit_file_content(
+    request: Request,
+    payload: FileSystemEditRequest,
+    service: AgentService = Depends(get_agent_service),
+) -> FileSystemOpResponse:
+    await service.edit_file(payload.uri, payload.search_replace_blocks)
+    return FileSystemOpResponse(
+        message=f"Change successfully made to {payload.uri}."
     )
