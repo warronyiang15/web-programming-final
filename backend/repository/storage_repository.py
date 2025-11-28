@@ -4,7 +4,8 @@ import asyncio
 from typing import Any, BinaryIO
 
 from google.cloud import storage
-
+import fnmatch
+import re
 
 class StorageRepository:
 
@@ -205,6 +206,123 @@ class StorageRepository:
             blob.upload_from_string(content, content_type='application/octet-stream')
 
         return await asyncio.to_thread(_sync_rewrite_file)
-    
-    
 
+    async def fuzzy_filename_search_from_storage(self, query: str, include_pattern: bool, destination_blob_path: str) -> list[str]:
+
+        def _sync_fuzzy_filename_search() -> list[str]:
+            bucket = self._client.bucket(self._bucket_name)
+
+            prefix = destination_blob_path.lstrip('/')
+
+            blobs = list(bucket.list_blobs(prefix=prefix))
+
+            results = []
+            for blob in blobs:
+                name = blob.name
+                
+                if include_pattern:
+                    # fnmatch matches against the whole string if no path separators, but we want recursive search.
+                    if fnmatch.fnmatch(name, query):
+                        results.append(name)
+                else:
+                    # Simple substring match
+                    if query in name:
+                        results.append(name)
+            
+            return results
+
+        return await asyncio.to_thread(_sync_fuzzy_filename_search)
+
+    async def fuzzy_file_content_search_from_storage(self, query: str, is_regex: bool, destination_blob_path: str, page: int | None) -> list[str]:
+
+        def _sync_fuzzy_file_content_search() -> list[str]:
+
+            bucket = self._client.bucket(self._bucket_name)
+
+            prefix = destination_blob_path.lstrip('/')
+
+            blobs = list(bucket.list_blobs(prefix=prefix))
+
+            results = []
+            
+            # Pre-compile regex if needed
+            regex_pattern = None
+            if is_regex:
+                try:
+                    regex_pattern = re.compile(query)
+                except re.error:
+                    # If regex is invalid, return empty or handle error. For now return empty.
+                    return []
+
+            for blob in blobs:
+                # Skip if it looks like a "directory" marker
+                if blob.name.endswith('/'):
+                    continue
+                
+                try:
+                    # Download content as string (assuming utf-8 text files)
+                    content = blob.download_as_text()
+                except Exception:
+                    # If file is not text (e.g. binary), skip it
+                    continue
+                
+                if is_regex and regex_pattern:
+                    if regex_pattern.search(content):
+                        results.append(blob.name)
+                else:
+                    if query in content:
+                        results.append(blob.name)
+            
+            return results
+
+        return await asyncio.to_thread(_sync_fuzzy_file_content_search)
+
+    async def search_file_offset_from_storage(self, query: str, destination_blob_path: str, is_regex: bool) -> list[dict[str, Any]]:
+        def _sync_search_file_offset() -> list[dict[str, Any]]:
+            bucket = self._client.bucket(self._bucket_name)
+
+            # Remove leading slash
+            path = destination_blob_path.lstrip('/')
+            
+            blob = bucket.blob(path)
+            
+            if not blob.exists():
+                return []
+                
+            # Skip "directory" markers
+            if path.endswith('/'):
+                return []
+
+            try:
+                content = blob.download_as_text()
+            except Exception:
+                return []
+
+            lines = content.split('\n')
+            results = []
+            
+            regex_pattern = None
+            if is_regex:
+                try:
+                    regex_pattern = re.compile(query)
+                except re.error:
+                    return []
+
+            for i, line in enumerate(lines):
+                match = False
+                if is_regex and regex_pattern:
+                    if regex_pattern.search(line):
+                        match = True
+                else:
+                    if query in line:
+                        match = True
+                
+                if match:
+                    results.append({
+                        "line": i + 1, # 1-based index
+                        "content": line
+                    })
+            
+            return results
+
+        return await asyncio.to_thread(_sync_search_file_offset)

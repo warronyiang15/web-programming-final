@@ -1,12 +1,12 @@
 from typing import Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
 from config.settings import Settings, get_settings
 from core.storage import get_storage_client
 from decorators.auth import required_api_key
-from models.requests.agent import FileSystemCreateRequest, FileSystemEditRequest, FileSystemRewriteRequest
-from models.responses.agent import DirectoryListResponse, DirectoryTreeResponse, FileSystemOpResponse
+from models.requests.agent import FileSystemCreateRequest, FileSystemEditRequest, FileSystemRewriteRequest, FileSystemSearchContentRequest
+from models.responses.agent import DirectoryListResponse, DirectoryTreeResponse, FileSystemOpResponse, FileSystemSearchResponse, FileSystemSearchContentResponse, FileSystemSearchOffsetResponse
 from models.responses.error import ErrorResponse
 from repository.storage_repository import StorageRepository
 from services.agent_service import AgentService
@@ -248,3 +248,104 @@ async def edit_file_content(
     return FileSystemOpResponse(
         message=f"Change successfully made to {payload.uri}."
     )
+
+@router.get(
+    '/search/paths',
+    summary="Search for files by name",
+    response_model=FileSystemSearchResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorResponse,
+            "description": "Invalid request parameters",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "X-LLM-API-Key is not valid or missing",
+        },
+    },
+)
+@required_api_key
+async def search_file_paths(
+    request: Request,
+    query: str = Query(..., description="The search query string or glob pattern"),
+    path: str = Query(..., description="The root path to search within"),
+    include_pattern: Optional[bool] = Query(False, description="Whether the query is a glob pattern"),
+    service: AgentService = Depends(get_agent_service),
+) -> FileSystemSearchResponse:
+    results = await service.search_file_paths(query, path, include_pattern)
+    return FileSystemSearchResponse(
+        matches=results
+    )
+
+@router.post(
+    '/search/content',
+    summary="Search for query in the content within the path",
+    response_model=FileSystemSearchContentResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorResponse,
+            "description": "Invalid request parameters",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "X-LLM-API-Key is not valid or missing",
+        },
+    },
+)
+@required_api_key
+async def search_file_content(
+    request: Request,
+    payload: FileSystemSearchContentRequest,
+    service: AgentService = Depends(get_agent_service),
+) -> FileSystemSearchContentResponse:
+    results = await service.grep_file_content(
+        payload.query, 
+        payload.search_in_folder, 
+        payload.is_regex or False, 
+        payload.page
+    )
+    
+    if not results:
+        message = "No result found or regex is invalid"
+    else:
+        message = f"Find {len(results)} matches result in {payload.search_in_folder}"
+        
+    return FileSystemSearchContentResponse(
+        files=results,
+        message=message
+    )
+
+@router.get(
+    '/files/search',
+    summary="Search for keyword in the content of the file",
+    response_model=FileSystemSearchOffsetResponse,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorResponse,
+            "description": "Invalid request parameters",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "X-LLM-API-Key is not valid or missing",
+        },
+    },
+)
+@required_api_key
+async def search_file_offset(
+    request: Request,
+    query: str = Query(..., description="The search query string or regex pattern"),
+    path: str = Query(..., description="The root path to search within"),
+    is_regex: Optional[bool] = Query(False, description="Whether the query is a regex pattern"),
+    service: AgentService = Depends(get_agent_service),
+) -> FileSystemSearchOffsetResponse:
+    results = await service.search_file_offset(query, path, is_regex or False)
+    
+    formatted_output_lines = []
+    for match in results:
+        formatted_output_lines.append(f"Line {match['line']}:\n```\n{match['content']}\n```")
+        
+    return FileSystemSearchOffsetResponse(
+        matches=results,
+        formatted_output="\n".join(formatted_output_lines)
+    )
+    

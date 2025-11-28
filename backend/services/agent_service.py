@@ -1,7 +1,7 @@
 import re
 from urllib.parse import unquote
 
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import HTTPException, status
 
@@ -100,3 +100,16 @@ class AgentService:
 
         # 4. Write back
         await self._storage_repository.rewrite_file_from_storage(decoded_path, new_content)
+
+    async def search_file_paths(self, query: str, path: str, include_pattern: bool = False) -> list[str]:
+        decoded_path = unquote(path)
+        decoded_query = unquote(query)
+        return await self._storage_repository.fuzzy_filename_search_from_storage(decoded_query, include_pattern, decoded_path)
+
+    async def grep_file_content(self, query: str, path: str, is_regex: bool = False, page: int | None = None) -> list[str]:
+        decoded_path = unquote(path)
+        return await self._storage_repository.fuzzy_file_content_search_from_storage(query, is_regex, decoded_path, page)
+
+    async def search_file_offset(self, query: str, path: str, is_regex: bool = False) -> list[dict[str, Any]]:
+        decoded_path = unquote(path)
+        return await self._storage_repository.search_file_offset_from_storage(query, decoded_path, is_regex)
