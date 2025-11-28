@@ -1,8 +1,9 @@
+from google.auth.exceptions import DefaultCredentialsError
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 
 from config.settings import Settings, get_settings
-from controllers.firestore_controller import get_firestore_repository
+from core.database import get_firestore_client
 from models.requests.llm import LLMDocumentRequest
 from models.responses.llm import LLMDocumentResponse
 from repository.firestore_repository import FirestoreRepository
@@ -25,6 +26,23 @@ def verify_api_key(
             detail="Invalid API Key",
         )
     return api_key
+
+
+def get_firestore_repository(
+    settings: Settings = Depends(get_settings),
+) -> FirestoreRepository:
+    try:
+        # Get the singleton client using the core database provider
+        client = get_firestore_client(
+            project_id=settings.firebase_project_id,
+            credentials_file=settings.firebase_credentials_file,
+        )
+        return FirestoreRepository(client=client)
+    except (DefaultCredentialsError, FileNotFoundError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unable to initialise Firestore client: {exc}",
+        ) from exc
 
 
 def get_llm_service(
@@ -58,4 +76,3 @@ async def ingest_srt_content(
         collection="srtDocs",
         timestamp=timestamp,
     )
-
