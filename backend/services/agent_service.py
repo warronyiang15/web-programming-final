@@ -1,4 +1,5 @@
 import re
+import posixpath
 from urllib.parse import unquote
 
 from typing import Any, Optional
@@ -12,8 +13,24 @@ class AgentService:
     def __init__(self, storage_repository: StorageRepository) -> None:
         self._storage_repository = storage_repository
 
-    async def read_file(self, path: str, start_line: Optional[int], end_line: Optional[int], page: Optional[int]) -> bytes:
+    def _normalize_path(self, path: str) -> str:
         decoded_path = unquote(path)
+        
+        # Use posixpath.normpath to resolve . and ..
+        normalized = posixpath.normpath(decoded_path)
+        
+        # Handle edge case where normpath returns '.' for empty path or current dir
+        if normalized == '.':
+            normalized = ''
+            
+        # Restore trailing slash if the original path intended a directory
+        if (decoded_path.endswith('/') or decoded_path.endswith('/.')) and normalized and not normalized.endswith('/'):
+            normalized += '/'
+            
+        return normalized
+
+    async def read_file(self, path: str, start_line: Optional[int], end_line: Optional[int], page: Optional[int]) -> bytes:
+        decoded_path = self._normalize_path(path)
         try:
             return await self._storage_repository.read_file_from_storage(
                 decoded_path, 
@@ -28,27 +45,27 @@ class AgentService:
             ) from exc
 
     async def list_directory(self, path: str) -> list[str]:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         return await self._storage_repository.list_directory_from_storage(decoded_path)
 
     async def list_directory_as_tree(self, path: str) -> str:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         return await self._storage_repository.list_directory_as_tree_from_storage(decoded_path)
 
     async def create_file_or_folder(self, path: str) -> None:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         return await self._storage_repository.create_directory_file_from_storage(decoded_path)
 
     async def delete_file_or_folder(self, path: str, recursive: Optional[bool] = False) -> None:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         return await self._storage_repository.delete_directory_file_from_storage(decoded_path, recursive)
 
     async def rewrite_file(self, path: str, content: str) -> None:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         return await self._storage_repository.rewrite_file_from_storage(decoded_path, content)
 
     async def edit_file(self, path: str, search_replace_blocks: str) -> None:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         
         # 1. Read current content
         try:
@@ -102,14 +119,14 @@ class AgentService:
         await self._storage_repository.rewrite_file_from_storage(decoded_path, new_content)
 
     async def search_file_paths(self, query: str, path: str, include_pattern: bool = False) -> list[str]:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         decoded_query = unquote(query)
         return await self._storage_repository.fuzzy_filename_search_from_storage(decoded_query, include_pattern, decoded_path)
 
     async def grep_file_content(self, query: str, path: str, is_regex: bool = False, page: int | None = None) -> list[str]:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         return await self._storage_repository.fuzzy_file_content_search_from_storage(query, is_regex, decoded_path, page)
 
     async def search_file_offset(self, query: str, path: str, is_regex: bool = False) -> list[dict[str, Any]]:
-        decoded_path = unquote(path)
+        decoded_path = self._normalize_path(path)
         return await self._storage_repository.search_file_offset_from_storage(query, decoded_path, is_regex)
