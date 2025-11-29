@@ -29,19 +29,24 @@ class AgentService:
             
         return normalized
 
-    async def read_file(self, path: str, start_line: Optional[int], end_line: Optional[int], page: Optional[int]) -> bytes:
+    async def read_file(self, path: str, start_line: Optional[int], end_line: Optional[int], page: Optional[int]) -> str:
         decoded_path = self._normalize_path(path)
         try:
-            return await self._storage_repository.read_file_from_storage(
+            return await self._storage_repository.read_file_from_storage_string(
                 decoded_path, 
                 start_line, 
                 end_line, 
                 page
             )
-        except Exception as exc:
-            raise HTTPException(
+        except FileNotFoundError as exc:
+             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"File not found: {decoded_path}"
+            ) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error reading file: {str(exc)}"
             ) from exc
 
     async def list_directory(self, path: str) -> list[str]:

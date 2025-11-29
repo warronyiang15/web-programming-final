@@ -6,7 +6,7 @@ from config.settings import Settings, get_settings
 from core.storage import get_storage_client
 from decorators.auth import required_api_key
 from models.requests.agent import FileSystemCreateRequest, FileSystemEditRequest, FileSystemRewriteRequest, FileSystemSearchContentRequest
-from models.responses.agent import DirectoryListResponse, DirectoryTreeResponse, FileSystemOpResponse, FileSystemSearchResponse, FileSystemSearchContentResponse, FileSystemSearchOffsetResponse
+from models.responses.agent import DirectoryListResponse, DirectoryTreeResponse, FileSystemOpResponse, FileSystemSearchResponse, FileSystemSearchContentResponse, FileSystemSearchOffsetResponse, FileContentResponse
 from models.responses.error import ErrorResponse
 from repository.storage_repository import StorageRepository
 from services.agent_service import AgentService
@@ -37,7 +37,7 @@ def get_agent_service(
 @router.get(
     '/files/content',
     summary="Get the content of a file",
-    response_class=Response,
+    response_model=FileContentResponse,
     responses={
         status.HTTP_400_BAD_REQUEST: {
             "model": ErrorResponse,
@@ -61,9 +61,9 @@ async def get_file_content(
     end_line: Optional[int] = Query(None, description="End line of the content"),
     page: Optional[int] = Query(None, description="Page number of the content"),
     service: AgentService = Depends(get_agent_service),
-) -> Response:
+) -> FileContentResponse:
     content = await service.read_file(path, start_line, end_line, page)
-    return Response(content=content, media_type="application/octet-stream")
+    return FileContentResponse(content=content)
 
 @router.get(
     '/directories/list',

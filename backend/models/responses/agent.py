@@ -1,6 +1,19 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class FileContentResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "status": "success",
+                "content": "File content here..."
+            }
+        }
+    )
+    status: str = Field(default="success", description="Operation status")
+    content: str = Field(..., description="File content")
+
+
 class DirectoryListResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={

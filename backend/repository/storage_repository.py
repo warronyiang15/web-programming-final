@@ -7,6 +7,9 @@ from google.cloud import storage
 import fnmatch
 import re
 
+from io import BytesIO
+import pypdf
+
 class StorageRepository:
 
     def __init__(
@@ -43,6 +46,64 @@ class StorageRepository:
             return f"gs://{self._bucket_name}/{destination_blob_name}"
 
         return await asyncio.to_thread(_sync_upload_bytes)
+
+    async def read_file_from_storage_string(self, destination_blob_path: str, start_line: int | None, end_line: int | None, page: int | None) -> str:
+        
+        def _sync_read_file_from_storage_string() -> str:
+            bucket = self._client.bucket(self._bucket_name)
+            
+            path = destination_blob_path.lstrip('/')
+            
+            blob = bucket.blob(path)
+            
+            # Check if file exists
+            if not blob.exists():
+                raise FileNotFoundError(f"File not found: {path}")
+
+            content_bytes = blob.download_as_bytes()
+            
+            # Handle PDF files
+            if path.lower().endswith('.pdf') or blob.content_type == 'application/pdf':
+                try:
+                    pdf_file = BytesIO(content_bytes)
+                    pdf_reader = pypdf.PdfReader(pdf_file)
+                    text_content = []
+                    
+                    # If page is specified, only read that page
+                    if page is not None:
+                        if 0 <= page < len(pdf_reader.pages):
+                            text_content.append(pdf_reader.pages[page].extract_text())
+                    else:
+                        # Read all pages
+                        for p in pdf_reader.pages:
+                            text_content.append(p.extract_text())
+                            
+                    return "\n".join(text_content)
+                except Exception as e:
+                    print(f"Error reading PDF {path}: {e}")
+                    # Fallback or re-raise? For now, return empty string or error message
+                    return f"[Error reading PDF content: {e}]"
+
+            # Handle text files (assume utf-8)
+            try:
+                text_content = content_bytes.decode('utf-8')
+                
+                # Apply line slicing if requested
+                if start_line is not None or end_line is not None:
+                    lines = text_content.split('\n')
+                    # Adjust for 1-based indexing if needed, but usually slice is 0-based in python
+                    # Assuming start_line/end_line are 1-based for user friendliness, convert to 0-based
+                    start = (start_line - 1) if start_line is not None and start_line > 0 else 0
+                    end = end_line if end_line is not None else len(lines)
+                    
+                    return "\n".join(lines[start:end])
+                
+                return text_content
+            except UnicodeDecodeError:
+                # Binary file that is not PDF
+                return "[Binary content]"
+
+        return await asyncio.to_thread(_sync_read_file_from_storage_string)
 
     async def read_file_from_storage(self, destination_blob_path: str, start_line: int | None, end_line: int | None, page: int | None) -> bytes:
 
