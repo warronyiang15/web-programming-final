@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
@@ -20,6 +21,20 @@ def create_app() -> FastAPI:
     # Trust headers from load balancers (e.g., Cloud Run)
     # This ensures request.url_for() generates https links when running behind TLS termination
     app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+    
+    # CORS
+    origins = [
+        "http://localhost:5173",
+        "https://web-programming-final-snowy.vercel.app",
+    ]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     
     # Required for Authlib/OAuth to handle state and redirects
     app.add_middleware(SessionMiddleware, secret_key=settings.auth_secret_key)
