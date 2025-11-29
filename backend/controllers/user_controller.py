@@ -119,7 +119,7 @@ async def auth_callback(
     
     # Redirect to frontend
     settings = get_settings()
-    return RedirectResponse(url=f"{settings.frontend_url}/auth/callback")
+    return RedirectResponse(url=f"{settings.frontend_url}/dashboard")
 
 @router.put(
     "/preference",
