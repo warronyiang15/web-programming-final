@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
 from typing import Any
 
+import httpx
 from fastapi import HTTPException, UploadFile, status
 from google.api_core.exceptions import GoogleAPICallError
 
+from config.settings import get_settings
 from models.course import CourseModel
 from models.message import MessageModel, Role
 from models.user import UserModel
@@ -110,7 +112,72 @@ class CourseService:
             createdAt=datetime.now(timezone.utc)
         )
         
-        return await self._message_repository.create_message(course_id, message_data)
+        # 3. Store the user message first
+        user_message = await self._message_repository.create_message(course_id, message_data)
+        
+        # 4. Trigger Agent LLM
+        settings = get_settings()
+        if settings.agent_backend_url:
+            try:
+                # Get all messages including the new one
+                messages = await self._message_repository.get_all_messages_by_course_id(course_id)
+                
+                # Construct workspace path
+                workspace_path = f"/my-project/{course_id}/"
+                
+                # Transform messages to payload format
+                message_list_payload = []
+                for msg in messages:
+                    msg_dict = {
+                        "role": msg.role.value,
+                        "content": msg.content,
+                        "toolCalls": [tc.model_dump() for tc in msg.toolCalls] if msg.toolCalls else None,
+                        "toolCallId": msg.toolCallId,
+                        "toolName": msg.toolName
+                    }
+                    message_list_payload.append(msg_dict)
+
+                payload = {
+                    "workspace_root_dir_path": workspace_path,
+                    "message_list": message_list_payload,
+                    "ID": course_id
+                }
+
+                # Send to Agent API
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(
+                        f"{settings.agent_backend_url}/chat", 
+                        json=payload, 
+                        timeout=60.0 
+                    )
+                    
+                    if response.status_code != 200:
+                        # something is error
+                        print(f"Agent API returned error: {response.text}")
+                    else:
+                        # Process response
+                        data = response.json()
+                        new_messages_data = data.get("message_list", [])
+                        
+                        for msg_data in new_messages_data:
+                            new_msg = MessageModel(
+                                id="",
+                                index=0,
+                                course_id=course_id,
+                                role=Role(msg_data["role"]),
+                                content=msg_data.get("content"),
+                                toolCalls=msg_data.get("toolCalls"),
+                                toolCallId=msg_data.get("toolCallId"),
+                                toolName=msg_data.get("toolName"),
+                                createdAt=datetime.now(timezone.utc)
+                            )
+                            await self._message_repository.create_message(course_id, new_msg)
+                        
+            except Exception as e:
+                # Log error but don't fail the user request
+                print(f"Failed to trigger agent: {e}")
+
+        return user_message
 
     async def get_messages_by_course_id(self, course_id: str, user: UserModel) -> list[MessageModel]:
         # 1. Verify course ownership

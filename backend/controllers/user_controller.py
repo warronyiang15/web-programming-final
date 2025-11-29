@@ -1,6 +1,7 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import RedirectResponse
 
 from config.settings import Settings, get_settings
 from core.database import get_firestore_client
@@ -85,7 +86,7 @@ async def login(
     "/callback/{provider}", 
     name="auth_callback", 
     summary="OAuth callback handler",
-    response_model=UserResponse,
+    response_class=RedirectResponse,
 )
 async def auth_callback(
     request: Request,
@@ -116,10 +117,9 @@ async def auth_callback(
     # Store dict in session, return model to API
     request.session['user'] = user_model.model_dump(mode='json')
     
-    # Convert to safe response model
-    safe_user = UserResponseModel(**user_model.model_dump())
-    
-    return UserResponse(status="success", user=safe_user)
+    # Redirect to frontend
+    settings = get_settings()
+    return RedirectResponse(url=f"{settings.frontend_url}/dashboard")
 
 @router.put(
     "/preference",

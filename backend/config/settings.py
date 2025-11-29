@@ -89,6 +89,18 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("GITHUB_API_BASE_URL"),
     )
 
+    agent_backend_url: str | None = Field(
+        default="http://localhost:8000",
+        description="URL of the agent backend service.",
+        validation_alias=AliasChoices("AGENT_BACKEND_URL"),
+    )
+
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        description="Frontend URL for redirects.",
+        validation_alias=AliasChoices("FRONTEND_URL"),
+    )
+
     @model_validator(mode="before")
     @classmethod
     def apply_env_aliases(cls, data: Any) -> Any:
