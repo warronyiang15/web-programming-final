@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     )
 
     app_name: str = Field(default="Backend Service", description="Service name")
+    app_env: str = Field(
+        default="development", 
+        description="Application environment: development or production",
+        validation_alias=AliasChoices("APP_ENV", "ENV")
+    )
     app_version: str = Field(default="0.1.0", description="Service semantic version")
     api_prefix: str = Field(default="/api/v1", description="Base prefix for all API routes")
     host: str | None = Field(default="0.0.0.0", description="Host interface for the ASGI server")

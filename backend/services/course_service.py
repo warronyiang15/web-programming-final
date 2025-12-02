@@ -140,7 +140,8 @@ class CourseService:
                 payload = {
                     "workspace_root_dir_path": workspace_path,
                     "message_list": message_list_payload,
-                    "ID": course_id
+                    "ID": user.id,
+                    "course_id": course_id
                 }
 
                 # Send to Agent API

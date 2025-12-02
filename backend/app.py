@@ -26,6 +26,7 @@ def create_app() -> FastAPI:
     origins = [
         "http://localhost:5173",
         "https://web-programming-final-snowy.vercel.app",
+        "https://localhost:5173"
     ]
 
     app.add_middleware(
@@ -37,7 +38,15 @@ def create_app() -> FastAPI:
     )
     
     # Required for Authlib/OAuth to handle state and redirects
-    app.add_middleware(SessionMiddleware, secret_key=settings.auth_secret_key)
+    # Configure cookie security based on environment
+    is_production = settings.app_env.lower() == "production"
+    
+    app.add_middleware(
+        SessionMiddleware, 
+        secret_key=settings.auth_secret_key,
+        https_only=True,
+        same_site="none"
+    )
 
     app.include_router(health_router, prefix=settings.api_prefix)
     app.include_router(user_router, prefix=settings.api_prefix)
