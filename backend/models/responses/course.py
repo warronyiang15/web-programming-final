@@ -126,3 +126,35 @@ class SingleMessageResponse(BaseModel):
     
     status: str = Field(..., description="Response status", example="success")
     message: MessageModel = Field(..., description="Created message")
+
+class CourseMarkdownFilesResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "status": "success",
+                "markdown_name_list": [
+                    "week1/notes.md",
+                    "week2/lecture.md"
+                ]
+            }
+        }
+    )
+
+    status: str = Field(..., description="Response status", example="success")
+    markdown_name_list: list[str] = Field(
+        ..., description="List of markdown file names within the course"
+    )
+
+
+class CourseMarkdownFileContentResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "status": "success",
+                "content": "# Week 1 Notes\n\nThis is the content of the markdown file.",
+            }
+        }
+    )
+
+    status: str = Field(..., description="Response status", example="success")
+    content: str = Field(..., description="Markdown file content as a string")

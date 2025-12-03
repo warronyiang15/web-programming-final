@@ -1,10 +1,10 @@
-import io
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 from fastapi import HTTPException, UploadFile, status
 from google.api_core.exceptions import GoogleAPICallError
+import io
 from pypdf import PdfReader
 
 from config.settings import get_settings
@@ -73,10 +73,7 @@ class CourseService:
                         )
                     except Exception as e:
                         print(f"Failed to convert PDF {file.filename} to text: {e}")
-                        # Fallback: upload original PDF if extraction fails? 
-                        # Requirement says "store it as .srt INSTEAD of .pdf". 
-                        # If conversion fails, maybe we should fail or upload original?
-                        # I'll assume we fail the upload of this file but continue/raise error.
+                        # Fallback or re-raise? For now, return empty string or error message
                         raise HTTPException(
                             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"Failed to process PDF file {file.filename}.",
@@ -241,3 +238,67 @@ class CourseService:
             )
         
         return await self._message_repository.get_all_messages_by_course_id(course_id)
+
+    async def get_course_markdown_files(self, course_id: str, user: UserModel) -> list[str]:
+        # 1. Verify course (and ownership)
+        # reusing get_course_by_id logic which checks ownership
+        await self.get_course_by_id(course_id, user)
+        
+        prefix = f"{user.id}/{course_id}/"
+        
+        # 2. Search for markdown files recursively
+        files = await self._storage_repository.fuzzy_filename_search_from_storage(
+            query="*.md", 
+            include_pattern=True, 
+            destination_blob_path=prefix
+        )
+        
+        # 3. Strip prefix to return paths relative to course root
+        
+        relative_files = []
+        for f in files:
+            if f.startswith(prefix):
+                # Strip the prefix
+                relative_files.append(f[len(prefix):])
+        
+        return relative_files
+
+    async def get_course_markdown_file_content(
+        self, course_id: str, user: UserModel, path: str
+    ) -> str:
+        # 1. Verify course ownership (and existence)
+        await self.get_course_by_id(course_id, user)
+
+        # 2. Validate path
+        if not path.endswith(".md"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid markdown path: must end with .md",
+            )
+
+        # Prevent directory traversal attempts
+        if ".." in path or "~" in path:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid markdown path: directory traversal is not allowed",
+            )
+
+        # Normalize leading slash to keep it relative to course root
+        normalized_path = path.lstrip("/")
+
+        blob_path = f"{user.id}/{course_id}/{normalized_path}"
+
+        try:
+            content = await self._storage_repository.read_file_from_storage_string(
+                destination_blob_path=blob_path,
+                start_line=None,
+                end_line=None,
+                page=None,
+            )
+        except FileNotFoundError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Markdown file not found",
+            )
+
+        return content

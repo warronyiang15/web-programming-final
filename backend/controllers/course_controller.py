@@ -7,7 +7,15 @@ from core.database import get_firestore_client
 from core.storage import get_storage_client
 from decorators.auth import required_login
 from models.requests.course import CreateMessageRequest
-from models.responses.course import CourseResponse, MultipleCourseResponse, CourseDetailResponse, MultipleMessageResponse, SingleMessageResponse
+from models.responses.course import (
+    CourseResponse,
+    MultipleCourseResponse,
+    CourseDetailResponse,
+    MultipleMessageResponse,
+    SingleMessageResponse,
+    CourseMarkdownFilesResponse,
+    CourseMarkdownFileContentResponse,
+)
 from models.responses.error import ErrorResponse
 from models.user import UserModel
 from repository.course_repository import CourseRepository
@@ -224,3 +232,78 @@ async def create_message_by_user(
     message = await service.create_message_by_user(course_id, user, payload.content)
     
     return SingleMessageResponse(status="success", message=message)
+
+@router.get(
+    "/{course_id}/files/markdown",
+    summary="Get all markdown files in a course",
+    response_model=CourseMarkdownFilesResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": ErrorResponse,
+            "description": "Course not found",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": ErrorResponse,
+            "description": "User does not have permission to access this course",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "User not authenticated",
+        }
+    }
+)
+@required_login
+async def get_course_markdown_files(
+    request: Request,
+    course_id: str,
+    service: CourseService = Depends(get_course_service),
+) -> CourseMarkdownFilesResponse:
+    
+    user_dict = request.session["user"]
+    user = UserModel(**user_dict)
+
+    markdown_files = await service.get_course_markdown_files(course_id, user)
+
+    return CourseMarkdownFilesResponse(
+        status="success",
+        markdown_name_list=markdown_files,
+    )
+
+
+@router.get(
+    "/{course_id}/files/markdown/content",
+    summary="Get markdown file content in a course",
+    response_model=CourseMarkdownFileContentResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": ErrorResponse,
+            "description": "Markdown file not found or course not found",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": ErrorResponse,
+            "description": "User does not have permission to access this course",
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ErrorResponse,
+            "description": "Invalid markdown path",
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": ErrorResponse,
+            "description": "User not authenticated",
+        },
+    },
+)
+@required_login
+async def get_course_markdown_file_content(
+    request: Request,
+    course_id: str,
+    path: str,
+    service: CourseService = Depends(get_course_service),
+) -> CourseMarkdownFileContentResponse:
+
+    user_dict = request.session["user"]
+    user = UserModel(**user_dict)
+
+    content = await service.get_course_markdown_file_content(course_id, user, path)
+
+    return CourseMarkdownFileContentResponse(status="success", content=content)
