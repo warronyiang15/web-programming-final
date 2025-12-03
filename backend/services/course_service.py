@@ -133,9 +133,7 @@ class CourseService:
                 detail="You do not have permission to perform this action on this course.",
             )
 
-        # 2. Create the message
-        # For user messages, we only set content and role
-        
+        # 2. Create and store the user message first
         message_data = MessageModel(
             id="", 
             index=0, 
@@ -145,13 +143,13 @@ class CourseService:
             createdAt=datetime.now(timezone.utc)
         )
 
-        user_message = message_data
+        user_message = await self._message_repository.create_message(course_id, message_data)
         
         # 3. Trigger Agent LLM (if configured)
         settings = get_settings()
         if settings.agent_backend_url:
             try:
-                # Get existing messages (excluding the new one as it's not saved yet)
+                # Get all messages including the newly stored user message
                 messages = await self._message_repository.get_all_messages_by_course_id(course_id)
                 
                 # Construct workspace path
@@ -168,15 +166,6 @@ class CourseService:
                         "toolName": msg.toolName
                     }
                     message_list_payload.append(msg_dict)
-                
-                # Append the new user message to payload
-                message_list_payload.append({
-                    "role": message_data.role.value,
-                    "content": message_data.content,
-                    "toolCalls": None,
-                    "toolCallId": None,
-                    "toolName": None
-                })
 
                 payload = {
                     "workspace_root_dir_path": workspace_path,
@@ -202,18 +191,23 @@ class CourseService:
                         new_messages_data = data.get("message_list", [])
                         
                         for msg_data in new_messages_data:
+                            # Skip user messages to avoid duplicating the one we just stored
+                            role = Role(msg_data["role"])
+                            if role == Role.USER:
+                                continue
+
                             new_msg = MessageModel(
                                 id="",
                                 index=0,
                                 course_id=course_id,
-                                role=Role(msg_data["role"]),
+                                role=role,
                                 content=msg_data.get("content"),
                                 toolCalls=msg_data.get("toolCalls"),
                                 toolCallId=msg_data.get("toolCallId"),
                                 toolName=msg_data.get("toolName"),
                                 createdAt=datetime.now(timezone.utc)
                             )
-                        user_message = await self._message_repository.create_message(course_id, new_msg)
+                            await self._message_repository.create_message(course_id, new_msg)
                         
             except Exception as e:
                 # Log error but don't fail the user request
