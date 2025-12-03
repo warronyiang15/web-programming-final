@@ -1,9 +1,11 @@
+import io
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 from fastapi import HTTPException, UploadFile, status
 from google.api_core.exceptions import GoogleAPICallError
+from pypdf import PdfReader
 
 from config.settings import get_settings
 from models.course import CourseModel
@@ -42,18 +44,52 @@ class CourseService:
         for file in files:
             if not file.filename:
                 continue
-                
-            destination_blob_name = f"{user.id}/{course.id}/user_upload/{file.filename}"
             
             try:
-                # Read file content asynchronously to avoid blocking and potential stream issues
+                # Read file content asynchronously
                 content = await file.read()
                 
-                await self._storage_repository.upload_file_bytes(
-                    destination_blob_name=destination_blob_name,
-                    content=content,
-                    content_type=file.content_type or "application/pdf",
-                )
+                # If PDF, extract text and save as .srt
+                if file.content_type == "application/pdf":
+                    try:
+                        # Extract text from PDF
+                        pdf_file = io.BytesIO(content)
+                        reader = PdfReader(pdf_file)
+                        text_content = ""
+                        for page in reader.pages:
+                            text_content += page.extract_text() + "\n"
+                            
+                        # Prepare content for upload as .srt
+                        new_filename = file.filename.rsplit('.', 1)[0] + ".srt"
+                        content_to_upload = text_content.encode('utf-8')
+                        content_type = "text/plain"
+                        
+                        destination_blob_name = f"{user.id}/{course.id}/user_upload/{new_filename}"
+                        
+                        await self._storage_repository.upload_file_bytes(
+                            destination_blob_name=destination_blob_name,
+                            content=content_to_upload,
+                            content_type=content_type,
+                        )
+                    except Exception as e:
+                        print(f"Failed to convert PDF {file.filename} to text: {e}")
+                        # Fallback: upload original PDF if extraction fails? 
+                        # Requirement says "store it as .srt INSTEAD of .pdf". 
+                        # If conversion fails, maybe we should fail or upload original?
+                        # I'll assume we fail the upload of this file but continue/raise error.
+                        raise HTTPException(
+                            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Failed to process PDF file {file.filename}.",
+                        ) from e
+                else:
+                    # Should not happen due to validation, but handle logic for non-pdfs if any
+                    destination_blob_name = f"{user.id}/{course.id}/user_upload/{file.filename}"
+                    await self._storage_repository.upload_file_bytes(
+                        destination_blob_name=destination_blob_name,
+                        content=content,
+                        content_type=file.content_type or "application/octet-stream",
+                    )
+                    
             except Exception as exc:
                 print(f"Failed to upload {file.filename}: {exc}")
                 raise HTTPException(

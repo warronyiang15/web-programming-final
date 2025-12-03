@@ -7,9 +7,6 @@ from google.cloud import storage
 import fnmatch
 import re
 
-from io import BytesIO
-import pypdf
-
 class StorageRepository:
 
     def __init__(
@@ -62,28 +59,6 @@ class StorageRepository:
 
             content_bytes = blob.download_as_bytes()
             
-            # Handle PDF files
-            if path.lower().endswith('.pdf') or blob.content_type == 'application/pdf':
-                try:
-                    pdf_file = BytesIO(content_bytes)
-                    pdf_reader = pypdf.PdfReader(pdf_file)
-                    text_content = []
-                    
-                    # If page is specified, only read that page
-                    if page is not None:
-                        if 0 <= page < len(pdf_reader.pages):
-                            text_content.append(pdf_reader.pages[page].extract_text())
-                    else:
-                        # Read all pages
-                        for p in pdf_reader.pages:
-                            text_content.append(p.extract_text())
-                            
-                    return "\n".join(text_content)
-                except Exception as e:
-                    print(f"Error reading PDF {path}: {e}")
-                    # Fallback or re-raise? For now, return empty string or error message
-                    return f"[Error reading PDF content: {e}]"
-
             # Handle text files (assume utf-8)
             try:
                 text_content = content_bytes.decode('utf-8')
