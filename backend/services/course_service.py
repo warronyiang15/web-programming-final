@@ -38,12 +38,12 @@ class CourseService:
         # 1. Create the course document first to get the ID
         course = await self._repository.create_course(user.id, name)
         
-        # 2. Upload files to GCS under /{course_id}/
+        # 2. Upload files to GCS under /{user_id}/{course_id}/user_upload/
         for file in files:
             if not file.filename:
                 continue
                 
-            destination_blob_name = f"{course.id}/{file.filename}"
+            destination_blob_name = f"{user.id}/{course.id}/user_upload/{file.filename}"
             
             try:
                 # Read file content asynchronously to avoid blocking and potential stream issues
