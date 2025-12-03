@@ -104,28 +104,27 @@ class CourseService:
         # For user messages, we only set content and role
         
         message_data = MessageModel(
-            id="", # Placeholder, will be set by repository
-            index=0, # Placeholder, will be set by repository
+            id="", 
+            index=0, 
             course_id=course_id,
             role=Role.USER,
             content=content,
             createdAt=datetime.now(timezone.utc)
         )
+
+        user_message = message_data
         
-        # 3. Store the user message first
-        user_message = await self._message_repository.create_message(course_id, message_data)
-        
-        # 4. Trigger Agent LLM
+        # 3. Trigger Agent LLM (if configured)
         settings = get_settings()
         if settings.agent_backend_url:
             try:
-                # Get all messages including the new one
+                # Get existing messages (excluding the new one as it's not saved yet)
                 messages = await self._message_repository.get_all_messages_by_course_id(course_id)
                 
                 # Construct workspace path
                 workspace_path = f"/my-project/{course_id}/"
                 
-                # Transform messages to payload format
+                # Prepare payload with existing messages
                 message_list_payload = []
                 for msg in messages:
                     msg_dict = {
@@ -136,6 +135,15 @@ class CourseService:
                         "toolName": msg.toolName
                     }
                     message_list_payload.append(msg_dict)
+                
+                # Append the new user message to payload
+                message_list_payload.append({
+                    "role": message_data.role.value,
+                    "content": message_data.content,
+                    "toolCalls": None,
+                    "toolCallId": None,
+                    "toolName": None
+                })
 
                 payload = {
                     "workspace_root_dir_path": workspace_path,
@@ -172,7 +180,7 @@ class CourseService:
                                 toolName=msg_data.get("toolName"),
                                 createdAt=datetime.now(timezone.utc)
                             )
-                            await self._message_repository.create_message(course_id, new_msg)
+                        user_message = await self._message_repository.create_message(course_id, new_msg)
                         
             except Exception as e:
                 # Log error but don't fail the user request
