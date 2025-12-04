@@ -85,7 +85,7 @@ class AgentService:
         # 2. Parse blocks
         
         pattern = re.compile(
-            r"(.*?)\n>>>>>\n(.*?)\n<<<<<",
+            r"(?:^|\n)(.*?)\n>>>>>\n(.*?)\n<<<<<", 
             re.DOTALL
         )
         
