@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     )
 
     app_name: str = Field(default="Backend Service", description="Service name")
+    app_env: str = Field(
+        default="development", 
+        description="Application environment: development or production",
+        validation_alias=AliasChoices("APP_ENV", "ENV")
+    )
     app_version: str = Field(default="0.1.0", description="Service semantic version")
     api_prefix: str = Field(default="/api/v1", description="Base prefix for all API routes")
     host: str | None = Field(default="0.0.0.0", description="Host interface for the ASGI server")
@@ -32,6 +37,11 @@ class Settings(BaseSettings):
     firestore_health_collection: str = Field(
         default="health_checks",
         description="Collection used for Firestore connectivity checks.",
+    )
+    gcs_bucket_name: str | None = Field(
+        default=None,
+        description="Google Cloud Storage bucket name for file uploads.",
+        validation_alias=AliasChoices("GCS_BUCKET_NAME", "GOOGLE_CLOUD_STORAGE_BUCKET"),
     )
     llm_api_key: str = Field(
         default="dev-dummy-key",
@@ -82,6 +92,18 @@ class Settings(BaseSettings):
         default="https://api.github.com/",
         description="Github API Base URL.",
         validation_alias=AliasChoices("GITHUB_API_BASE_URL"),
+    )
+
+    agent_backend_url: str | None = Field(
+        default="http://localhost:8000",
+        description="URL of the agent backend service.",
+        validation_alias=AliasChoices("AGENT_BACKEND_URL"),
+    )
+
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        description="Frontend URL for redirects.",
+        validation_alias=AliasChoices("FRONTEND_URL"),
     )
 
     @model_validator(mode="before")

@@ -5,7 +5,7 @@ class ErrorResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "detail": "User not authenticated"
+                "detail": "Error Message here!"
             }
         }
     )
