@@ -25,7 +25,7 @@ def create_app() -> FastAPI:
     # CORS
     origins = [
         "http://localhost:5173",
-        "https://web-programming-final-snowy.vercel.app",
+        settings.frontend_url,
         "https://localhost:5173"
     ]
 
