@@ -83,19 +83,9 @@ class AgentService:
             ) from exc
 
         # 2. Parse blocks
-        # Assumed format:
-        # ${ORIGINAL}
-        # ...
-        # ${DIVIDER}
-        # ...
-        # ${FINAL}
-        
-        # Regex to match blocks
-        # The pattern looks for ${ORIGINAL} ... ${DIVIDER} ... ${FINAL}
-        # Using re.DOTALL to match across lines
         
         pattern = re.compile(
-            r"\$\{ORIGINAL\}(.*?)\$\{DIVIDER\}(.*?)\$\{FINAL\}", 
+            r"(.*?)\n>>>>>\n(.*?)\n<<<<<",
             re.DOTALL
         )
         
