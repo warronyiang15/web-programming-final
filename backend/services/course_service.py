@@ -179,7 +179,7 @@ class CourseService:
                     response = await client.post(
                         f"{settings.agent_backend_url}/chat", 
                         json=payload, 
-                        timeout=60.0 
+                        timeout=300.0 
                     )
                     
                     if response.status_code != 200:

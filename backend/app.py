@@ -18,16 +18,23 @@ def create_app() -> FastAPI:
         version=settings.app_version,
     )
     
-    # Trust headers from load balancers (e.g., Cloud Run)
-    # This ensures request.url_for() generates https links when running behind TLS termination
-    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
-    
     # CORS
     origins = [
         "http://localhost:5173",
         settings.frontend_url,
-        "https://localhost:5173"
+        "https://localhost:5173",
+        "https://wp1141-finals.web.app",
     ]
+
+    is_production = settings.app_env.lower() == "production"
+    
+    app.add_middleware(
+        SessionMiddleware, 
+        secret_key=settings.auth_secret_key,
+        https_only=True,
+        same_site="none",
+        session_cookie="__session",
+    )
 
     app.add_middleware(
         CORSMiddleware,
@@ -36,17 +43,11 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
-    # Required for Authlib/OAuth to handle state and redirects
-    # Configure cookie security based on environment
-    is_production = settings.app_env.lower() == "production"
-    
-    app.add_middleware(
-        SessionMiddleware, 
-        secret_key=settings.auth_secret_key,
-        https_only=True,
-        same_site="none"
-    )
+
+    # Trust headers from load balancers (e.g., Cloud Run)
+    # This ensures request.url_for() generates https links when running behind TLS termination
+    # Added LAST so it runs FIRST
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
     app.include_router(health_router, prefix=settings.api_prefix)
     app.include_router(user_router, prefix=settings.api_prefix)
